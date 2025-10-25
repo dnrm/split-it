@@ -31,12 +31,17 @@ export default async function InvitePage({ params }: InvitePageProps) {
     .eq('code', code)
     .single();
 
+  const group = invitation?.group as any;
+
   // Handle invitation not found
   if (fetchError || !invitation) {
     return <InvitePageClient code={code} invitation={null} user={null} />;
   }
 
-  const group = invitation.group as any;
+  // Check if group exists - this could happen if the group was deleted
+  if (!group) {
+    return <InvitePageClient code={code} invitation={null} user={null} />;
+  }
 
   // Validate invitation
   const validation = validateInvitation(invitation);
@@ -61,10 +66,16 @@ export default async function InvitePage({ params }: InvitePageProps) {
     redirect(`/dashboard/groups/${group.id}`);
   }
 
+  // Add group data to invitation object for client component
+  const invitationWithGroup = {
+    ...invitation,
+    group: group
+  };
+
   return (
     <InvitePageClient
       code={code}
-      invitation={invitation}
+      invitation={invitationWithGroup}
       user={user}
     />
   );

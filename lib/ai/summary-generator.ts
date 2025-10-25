@@ -56,6 +56,8 @@ export async function generateGroupSummary(
       'Write in a friendly, conversational tone. Be warm and approachable. Use casual language but stay clear.',
     sarcastic:
       'Write with a playful, lightly sarcastic tone. Add some humor and wit. Gently tease but stay friendly.',
+    roast:
+      'Write in a brutally honest, roast-style tone. Be savage but playful. Call out ridiculous spending patterns, make fun of who paid the most, and roast people for their financial choices. Use humor, exaggeration, and friendly insults. Be mean but in a fun way that friends would laugh at.',
   };
 
   const prompt = `Generate a summary for "${groupName}" expense group.

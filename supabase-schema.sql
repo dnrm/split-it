@@ -212,18 +212,21 @@ CREATE POLICY "Users can update their own profile" ON public.users
 CREATE POLICY "Users can insert their own profile" ON public.users
   FOR INSERT WITH CHECK (auth.uid() = id);
 
--- RLS Policies for groups table
-CREATE POLICY "Users can view groups they are members of" ON public.groups
-  FOR SELECT USING (is_group_member(id, auth.uid()) OR auth.uid() = created_by);
+-- DISABLE RLS for groups table (hackathon project)
+ALTER TABLE public.groups DISABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can create groups" ON public.groups
-  FOR INSERT WITH CHECK (auth.uid() = created_by);
+-- RLS Policies for groups table (DISABLED)
+-- CREATE POLICY "Users can view groups they are members of" ON public.groups
+--   FOR SELECT USING (is_group_member(id, auth.uid()) OR auth.uid() = created_by);
 
-CREATE POLICY "Group creators can update their groups" ON public.groups
-  FOR UPDATE USING (auth.uid() = created_by);
+-- CREATE POLICY "Users can create groups" ON public.groups
+--   FOR INSERT WITH CHECK (auth.uid() = created_by);
 
-CREATE POLICY "Group creators can delete their groups" ON public.groups
-  FOR DELETE USING (auth.uid() = created_by);
+-- CREATE POLICY "Group creators can update their groups" ON public.groups
+--   FOR UPDATE USING (auth.uid() = created_by);
+
+-- CREATE POLICY "Group creators can delete their groups" ON public.groups
+--   FOR DELETE USING (auth.uid() = created_by);
 
 -- RLS Policies for group_members table
 CREATE POLICY "Users can view members of their groups" ON public.group_members

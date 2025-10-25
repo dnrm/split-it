@@ -105,7 +105,7 @@ export interface ExpenseWithDetails extends Expense {
 }
 
 // Summary Types
-export type SummaryTone = 'formal' | 'casual' | 'sarcastic';
+export type SummaryTone = 'formal' | 'casual' | 'sarcastic' | 'roast';
 
 export interface GroupSummary {
   totalSpend: number;

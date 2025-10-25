@@ -144,6 +144,14 @@ export function GroupSummaryView({ expenses, groupName }: GroupSummaryViewProps)
                 >
                   Sarcastic
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleGenerate('roast')}
+                  disabled={loading}
+                  className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                >
+                  🔥 Roast
+                </Button>
               </div>
             </div>
           )}
