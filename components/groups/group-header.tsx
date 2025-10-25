@@ -15,12 +15,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, UserPlus, Users, ChevronDown, Link as LinkIcon, Mail } from 'lucide-react';
 import { Group, GroupMember } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { GroupInviteDialog } from './group-invite-dialog';
 
 interface GroupHeaderProps {
   group: Group;
@@ -107,13 +114,33 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
           </div>
         </div>
 
-        <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
-          <DialogTrigger asChild>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
               Add Member
+              <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
-          </DialogTrigger>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsAddMemberOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Add by Email
+            </DropdownMenuItem>
+            <GroupInviteDialog
+              groupId={group.id}
+              groupName={group.name}
+              trigger={
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  Create Invite Link
+                </DropdownMenuItem>
+              }
+            />
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
           <DialogContent>
             <form onSubmit={handleAddMember}>
               <DialogHeader>
@@ -166,7 +193,6 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
             </Avatar>
             <span className="text-sm font-medium">
               {member.user?.name}
-              {member.user_id === currentUserId && ' (You)'}
             </span>
           </div>
         ))}

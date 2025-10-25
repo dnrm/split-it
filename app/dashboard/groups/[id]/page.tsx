@@ -44,9 +44,15 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   console.log('Membership check:', { membership, membershipError });
 
+  // If no membership found, check if user is the group creator
   if (!membership) {
-    console.log('User is not a member of this group, redirecting...');
-    redirect('/dashboard/groups');
+    console.log('No membership found, checking if user is group creator...');
+    if (group.created_by !== user.id) {
+      console.log('User is not a member or creator, redirecting...');
+      redirect('/dashboard/groups');
+    } else {
+      console.log('User is group creator, allowing access');
+    }
   }
 
   // Fetch group members
@@ -96,7 +102,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
   }
 
   return (
-    <div className="container max-w-7xl px-4 py-8">
+    <div className="container max-w-7xl mx-auto px-4 py-8">
       <GroupHeader group={group} members={members || []} currentUserId={user.id} />
 
       <Tabs defaultValue="expenses" className="mt-8">

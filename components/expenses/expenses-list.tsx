@@ -29,12 +29,12 @@ interface ExpensesListProps {
 }
 
 const categoryColors: Record<string, string> = {
-  food: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  transport: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  accommodation: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  entertainment: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-  utilities: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  other: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+  food: 'bg-chart-1/10 text-chart-1',
+  transport: 'bg-chart-2/10 text-chart-2',
+  accommodation: 'bg-chart-3/10 text-chart-3',
+  entertainment: 'bg-chart-4/10 text-chart-4',
+  utilities: 'bg-chart-5/10 text-chart-5',
+  other: 'bg-muted text-muted-foreground',
 };
 
 export function ExpensesList({ expenses, currentUserId, currency }: ExpensesListProps) {

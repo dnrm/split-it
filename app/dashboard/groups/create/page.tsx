@@ -49,7 +49,7 @@ export default function CreateGroupPage() {
         return;
       }
 
-      // Add creator as member
+      // Add creator as member (required for group to show members)
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
@@ -58,9 +58,13 @@ export default function CreateGroupPage() {
         });
 
       if (memberError) {
-        toast.error(memberError.message);
-        return;
+        console.error('Error adding creator as member:', memberError);
+        // Don't fail the group creation - the database trigger should handle this
+        console.warn('Manual member addition failed, but database trigger should add creator as member');
       }
+
+      // Small delay to ensure database trigger completes
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       toast.success('Group created successfully!');
       router.push(`/dashboard/groups/${group.id}`);
@@ -74,7 +78,7 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <div className="container max-w-2xl px-4 py-8">
+    <div className="container max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Button variant="ghost" asChild>
           <Link href="/dashboard/groups">

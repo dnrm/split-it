@@ -25,25 +25,51 @@ export default async function ExpensesPage() {
   const groupIds = memberships?.map((m) => m.group_id) || [];
 
   // Fetch all expenses from user's groups
-  const { data: expenses } = await supabase
+  const { data: expenses, error: expensesError } = await supabase
     .from('expenses')
     .select(`
       *,
-      payer:users!expenses_payer_id_fkey(name),
       group:groups(name, currency)
     `)
     .in('group_id', groupIds)
     .order('created_at', { ascending: false })
     .limit(50);
 
+  // Log error for debugging
+  if (expensesError) {
+    console.error('Error fetching expenses:', expensesError);
+  }
+
+  // If we have expenses, fetch payer information separately
+  let expensesWithPayer = expenses;
+  if (expenses && expenses.length > 0) {
+    // Get unique payer IDs
+    const payerIds = [...new Set(expenses.map(exp => exp.payer_id))];
+    
+    // Fetch payer information
+    const { data: payers } = await supabase
+      .from('users')
+      .select('*')
+      .in('id', payerIds);
+    
+    // Create a map for quick lookup
+    const payerMap = new Map(payers?.map(p => [p.id, p]) || []);
+    
+    // Merge payer data with expenses
+    expensesWithPayer = expenses.map(expense => ({
+      ...expense,
+      payer: payerMap.get(expense.payer_id)
+    }));
+  }
+
   return (
-    <div className="container max-w-7xl px-4 py-8">
+    <div className="container max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">All Expenses</h1>
         <p className="text-muted-foreground">Recent expenses across all your groups</p>
       </div>
 
-      {!expenses || expenses.length === 0 ? (
+      {!expensesWithPayer || expensesWithPayer.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Receipt className="mb-4 h-16 w-16 text-muted-foreground" />
@@ -55,7 +81,7 @@ export default async function ExpensesPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {expenses.map((expense) => (
+          {expensesWithPayer.map((expense) => (
             <Link
               key={expense.id}
               href={`/dashboard/groups/${expense.group_id}`}

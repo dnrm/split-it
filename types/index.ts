@@ -23,6 +23,20 @@ export interface GroupMember {
   user?: User;
 }
 
+export type InvitationUsageType = 'single' | 'multi';
+export type InvitationExpiration = '24h' | '7d' | '30d';
+
+export interface GroupInvitation {
+  id: string;
+  group_id: string;
+  code: string;
+  usage_type: InvitationUsageType;
+  expires_at: string;
+  created_by: string;
+  created_at: string;
+  used_count: number;
+}
+
 export interface Expense {
   id: string;
   group_id: string;

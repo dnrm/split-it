@@ -4,7 +4,7 @@ import { Sparkles, Users, TrendingUp, MessageSquare } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-linear-to-b from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">

@@ -33,7 +33,6 @@ export default async function DashboardPage() {
     .from('expenses')
     .select(`
       *,
-      payer:users!expenses_payer_id_fkey(name),
       group:groups(name)
     `)
     .in(
@@ -42,6 +41,28 @@ export default async function DashboardPage() {
     )
     .order('created_at', { ascending: false })
     .limit(5);
+
+  // If we have expenses, fetch payer information separately
+  let recentExpensesWithPayer = recentExpenses;
+  if (recentExpenses && recentExpenses.length > 0) {
+    // Get unique payer IDs
+    const payerIds = [...new Set(recentExpenses.map(exp => exp.payer_id))];
+    
+    // Fetch payer information
+    const { data: payers } = await supabase
+      .from('users')
+      .select('*')
+      .in('id', payerIds);
+    
+    // Create a map for quick lookup
+    const payerMap = new Map(payers?.map(p => [p.id, p]) || []);
+    
+    // Merge payer data with expenses
+    recentExpensesWithPayer = recentExpenses.map(expense => ({
+      ...expense,
+      payer: payerMap.get(expense.payer_id)
+    }));
+  }
 
   // Calculate stats
   const totalGroups = groups?.length || 0;
@@ -52,7 +73,7 @@ export default async function DashboardPage() {
   ) || 0;
 
   return (
-    <div className="container max-w-7xl px-4 py-8">
+    <div className="container max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -161,7 +182,7 @@ export default async function DashboardPage() {
             <CardDescription>Latest expenses across all groups</CardDescription>
           </CardHeader>
           <CardContent>
-            {!recentExpenses || recentExpenses.length === 0 ? (
+            {!recentExpensesWithPayer || recentExpensesWithPayer.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Receipt className="mb-4 h-12 w-12 text-muted-foreground" />
                 <p className="mb-2 text-sm font-medium">No expenses yet</p>
@@ -169,7 +190,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {recentExpenses.map((expense) => (
+                {recentExpensesWithPayer.map((expense) => (
                   <div
                     key={expense.id}
                     className="flex items-start justify-between rounded-lg border p-4"

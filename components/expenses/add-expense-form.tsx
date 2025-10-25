@@ -188,13 +188,13 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
               <div className="mb-4 flex items-center gap-2">
                 {parsedExpense.confidence >= 0.7 ? (
                   <>
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">High confidence</span>
+                    <Check className="h-4 w-4 text-chart-5" />
+                    <span className="text-sm font-medium text-chart-5">High confidence</span>
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="h-4 w-4 text-yellow-600" />
-                    <span className="text-sm font-medium text-yellow-600">
+                    <AlertCircle className="h-4 w-4 text-chart-4" />
+                    <span className="text-sm font-medium text-chart-4">
                       Please review carefully
                     </span>
                   </>

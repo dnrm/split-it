@@ -62,9 +62,9 @@ export function BalanceView({ expenses, currency, currentUserId }: BalanceViewPr
               <p
                 className={`text-4xl font-bold ${
                   currentUserBalance.balance > 0
-                    ? 'text-green-600'
+                    ? 'text-chart-5'
                     : currentUserBalance.balance < 0
-                    ? 'text-red-600'
+                    ? 'text-destructive'
                     : 'text-muted-foreground'
                 }`}
               >
@@ -110,9 +110,9 @@ export function BalanceView({ expenses, currency, currentUserId }: BalanceViewPr
                 >
                   <div className="flex items-center gap-3">
                     {isDebtor ? (
-                      <TrendingDown className="h-5 w-5 text-red-600" />
+                      <TrendingDown className="h-5 w-5 text-destructive" />
                     ) : (
-                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <TrendingUp className="h-5 w-5 text-chart-5" />
                     )}
                     <div>
                       <p className="font-medium">
@@ -174,9 +174,9 @@ export function BalanceView({ expenses, currency, currentUserId }: BalanceViewPr
                   variant={balance.balance === 0 ? 'outline' : 'default'}
                   className={
                     balance.balance > 0
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      ? 'bg-chart-5/10 text-chart-5'
                       : balance.balance < 0
-                      ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      ? 'bg-destructive/10 text-destructive'
                       : ''
                   }
                 >

@@ -54,7 +54,7 @@ export default async function GroupsPage() {
   );
 
   return (
-    <div className="container max-w-7xl px-4 py-8">
+    <div className="container max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
