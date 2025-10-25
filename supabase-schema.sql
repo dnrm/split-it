@@ -1,0 +1,219 @@
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Drop existing policies and tables (in reverse dependency order)
+DROP POLICY IF EXISTS "Users can view splits from their group expenses" ON public.expense_splits;
+DROP POLICY IF EXISTS "Group members can create expense splits" ON public.expense_splits;
+DROP POLICY IF EXISTS "Expense creators can update splits" ON public.expense_splits;
+DROP POLICY IF EXISTS "Expense creators can delete splits" ON public.expense_splits;
+DROP POLICY IF EXISTS "Users can view expenses from their groups" ON public.expenses;
+DROP POLICY IF EXISTS "Group members can create expenses" ON public.expenses;
+DROP POLICY IF EXISTS "Expense creators can update their expenses" ON public.expenses;
+DROP POLICY IF EXISTS "Expense creators can delete their expenses" ON public.expenses;
+DROP POLICY IF EXISTS "Users can view members of their groups" ON public.group_members;
+DROP POLICY IF EXISTS "Group creators can add members" ON public.group_members;
+DROP POLICY IF EXISTS "Group creators and members themselves can remove members" ON public.group_members;
+DROP POLICY IF EXISTS "Users can view groups they are members of" ON public.groups;
+DROP POLICY IF EXISTS "Users can create groups" ON public.groups;
+DROP POLICY IF EXISTS "Group creators can update their groups" ON public.groups;
+DROP POLICY IF EXISTS "Group creators can delete their groups" ON public.groups;
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.users;
+
+-- Drop tables (in reverse dependency order)
+DROP TABLE IF EXISTS public.expense_splits;
+DROP TABLE IF EXISTS public.expenses;
+DROP TABLE IF EXISTS public.group_members;
+DROP TABLE IF EXISTS public.groups;
+DROP TABLE IF EXISTS public.users;
+
+-- Drop trigger first (depends on function)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Drop functions
+DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP FUNCTION IF EXISTS public.is_group_member(UUID, UUID);
+
+-- Users table (extends Supabase auth.users)
+CREATE TABLE public.users (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Groups table
+CREATE TABLE public.groups (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  currency TEXT DEFAULT 'USD' NOT NULL,
+  created_by UUID REFERENCES auth.users(id) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Group members table
+CREATE TABLE public.group_members (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  UNIQUE(group_id, user_id)
+);
+
+-- Expenses table
+CREATE TABLE public.expenses (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
+  payer_id UUID REFERENCES auth.users(id) NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
+  description TEXT NOT NULL,
+  category TEXT,
+  raw_input TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Expense splits table
+CREATE TABLE public.expense_splits (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  expense_id UUID REFERENCES public.expenses(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Create indexes for better query performance
+CREATE INDEX idx_group_members_group_id ON public.group_members(group_id);
+CREATE INDEX idx_group_members_user_id ON public.group_members(user_id);
+CREATE INDEX idx_expenses_group_id ON public.expenses(group_id);
+CREATE INDEX idx_expenses_payer_id ON public.expenses(payer_id);
+CREATE INDEX idx_expense_splits_expense_id ON public.expense_splits(expense_id);
+CREATE INDEX idx_expense_splits_user_id ON public.expense_splits(user_id);
+
+-- Function to check if user is group member (prevents recursion)
+CREATE OR REPLACE FUNCTION public.is_group_member(p_group_id UUID, p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.group_members 
+    WHERE group_id = p_group_id AND user_id = p_user_id
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Enable Row Level Security
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_splits ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for users table
+CREATE POLICY "Users can view their own profile" ON public.users
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update their own profile" ON public.users
+  FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert their own profile" ON public.users
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- RLS Policies for groups table
+CREATE POLICY "Users can view groups they are members of" ON public.groups
+  FOR SELECT USING (is_group_member(id, auth.uid()) OR auth.uid() = created_by);
+
+CREATE POLICY "Users can create groups" ON public.groups
+  FOR INSERT WITH CHECK (auth.uid() = created_by);
+
+CREATE POLICY "Group creators can update their groups" ON public.groups
+  FOR UPDATE USING (auth.uid() = created_by);
+
+CREATE POLICY "Group creators can delete their groups" ON public.groups
+  FOR DELETE USING (auth.uid() = created_by);
+
+-- RLS Policies for group_members table
+CREATE POLICY "Users can view members of their groups" ON public.group_members
+  FOR SELECT USING (is_group_member(group_id, auth.uid()));
+
+CREATE POLICY "Group creators can add members" ON public.group_members
+  FOR INSERT WITH CHECK (
+    auth.uid() IN (
+      SELECT created_by FROM public.groups WHERE id = group_id
+    )
+  );
+
+CREATE POLICY "Group creators and members themselves can remove members" ON public.group_members
+  FOR DELETE USING (
+    auth.uid() = user_id OR
+    auth.uid() IN (
+      SELECT created_by FROM public.groups WHERE id = group_id
+    )
+  );
+
+-- RLS Policies for expenses table
+CREATE POLICY "Users can view expenses from their groups" ON public.expenses
+  FOR SELECT USING (is_group_member(group_id, auth.uid()));
+
+CREATE POLICY "Group members can create expenses" ON public.expenses
+  FOR INSERT WITH CHECK (is_group_member(group_id, auth.uid()));
+
+CREATE POLICY "Expense creators can update their expenses" ON public.expenses
+  FOR UPDATE USING (auth.uid() = payer_id);
+
+CREATE POLICY "Expense creators can delete their expenses" ON public.expenses
+  FOR DELETE USING (auth.uid() = payer_id);
+
+-- RLS Policies for expense_splits table
+CREATE POLICY "Users can view splits from their group expenses" ON public.expense_splits
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.expenses e
+      WHERE e.id = expense_splits.expense_id
+      AND is_group_member(e.group_id, auth.uid())
+    )
+  );
+
+CREATE POLICY "Group members can create expense splits" ON public.expense_splits
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.expenses e
+      WHERE e.id = expense_id
+      AND is_group_member(e.group_id, auth.uid())
+    )
+  );
+
+CREATE POLICY "Expense creators can update splits" ON public.expense_splits
+  FOR UPDATE USING (
+    auth.uid() IN (
+      SELECT payer_id FROM public.expenses WHERE id = expense_id
+    )
+  );
+
+CREATE POLICY "Expense creators can delete splits" ON public.expense_splits
+  FOR DELETE USING (
+    auth.uid() IN (
+      SELECT payer_id FROM public.expenses WHERE id = expense_id
+    )
+  );
+
+-- Function to automatically create user profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, name)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1))
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to create user profile
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
