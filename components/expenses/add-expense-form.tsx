@@ -234,8 +234,16 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
                       
                       if (!currentUserExists) {
                         allMembers.unshift({
+                          id: `temp-${currentUserId}`,
+                          group_id: groupId,
                           user_id: currentUserId,
-                          user: { name: 'You' } // Fallback name
+                          joined_at: new Date().toISOString(),
+                          user: { 
+                            id: currentUserId,
+                            email: '',
+                            name: 'You',
+                            created_at: new Date().toISOString()
+                          } // Fallback user object
                         });
                       }
                       
@@ -290,8 +298,16 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
                   
                   if (!currentUserExists) {
                     allMembers.unshift({
+                      id: `temp-${currentUserId}`,
+                      group_id: groupId,
                       user_id: currentUserId,
-                      user: { name: 'You' }
+                      joined_at: new Date().toISOString(),
+                      user: { 
+                        id: currentUserId,
+                        email: '',
+                        name: 'You',
+                        created_at: new Date().toISOString()
+                      }
                     });
                   }
                   
