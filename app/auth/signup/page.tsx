@@ -34,6 +34,12 @@ function SignupForm() {
     e.preventDefault();
     setLoading(true);
 
+    if (!name.trim()) {
+      toast.error('Please enter your name');
+      setLoading(false);
+      return;
+    }
+
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters');
       setLoading(false);
@@ -87,16 +93,19 @@ function SignupForm() {
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Display Name</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Your name"
+                placeholder="Your display name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 disabled={loading}
               />
+              <p className="text-xs text-muted-foreground">
+                This is how your name will appear to other group members
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

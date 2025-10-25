@@ -212,6 +212,17 @@ CREATE POLICY "Users can update their own profile" ON public.users
 CREATE POLICY "Users can insert their own profile" ON public.users
   FOR INSERT WITH CHECK (auth.uid() = id);
 
+-- Allow group members to view each other's basic info
+CREATE POLICY "Group members can view each other's basic info" ON public.users
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.group_members gm1
+      JOIN public.group_members gm2 ON gm1.group_id = gm2.group_id
+      WHERE gm1.user_id = auth.uid() 
+      AND gm2.user_id = users.id
+    )
+  );
+
 -- DISABLE RLS for groups table (hackathon project)
 ALTER TABLE public.groups DISABLE ROW LEVEL SECURITY;
 
@@ -330,7 +341,10 @@ BEGIN
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1))
+    COALESCE(
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'name'), ''),
+      split_part(NEW.email, '@', 1)
+    )
   );
   RETURN NEW;
 END;
@@ -350,6 +364,16 @@ BEGIN
   INSERT INTO public.group_members (group_id, user_id)
   VALUES (NEW.id, NEW.created_by);
   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to update user names for existing users without names
+CREATE OR REPLACE FUNCTION public.update_user_names()
+RETURNS void AS $$
+BEGIN
+  UPDATE public.users 
+  SET name = split_part(email, '@', 1)
+  WHERE name IS NULL OR TRIM(name) = '';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

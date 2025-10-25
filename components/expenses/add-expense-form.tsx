@@ -28,6 +28,11 @@ interface AddExpenseFormProps {
 
 export function AddExpenseForm({ groupId, members, currentUserId, currency }: AddExpenseFormProps) {
   const router = useRouter();
+  
+  // Debug logging
+  console.log('AddExpenseForm - members received:', members);
+  console.log('AddExpenseForm - currentUserId:', currentUserId);
+  console.log('AddExpenseForm - groupId:', groupId);
   const [nlInput, setNlInput] = useState('');
   const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
   const [loading, setLoading] = useState(false);
@@ -227,33 +232,20 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
                     <SelectValue placeholder="Select payer" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(() => {
-                      // Ensure current user is always included, even if not in members array
-                      const allMembers = [...members];
-                      const currentUserExists = members.some(m => m.user_id === currentUserId);
-                      
-                      if (!currentUserExists) {
-                        allMembers.unshift({
-                          id: `temp-${currentUserId}`,
-                          group_id: groupId,
-                          user_id: currentUserId,
-                          joined_at: new Date().toISOString(),
-                          user: { 
-                            id: currentUserId,
-                            email: '',
-                            name: 'You',
-                            created_at: new Date().toISOString()
-                          } // Fallback user object
-                        });
-                      }
-                      
-                      return allMembers.map((member) => (
+                    {members.map((member) => {
+                      console.log('Rendering member in dropdown:', {
+                        user_id: member.user_id,
+                        user_name: member.user?.name,
+                        display_name: member.user?.name || 'Unknown User',
+                        is_current_user: member.user_id === currentUserId
+                      });
+                      return (
                         <SelectItem key={member.user_id} value={member.user_id}>
-                          {member.user?.name || 'You'}
+                          {member.user?.name || 'Unknown User'}
                           {member.user_id === currentUserId && ' (You)'}
                         </SelectItem>
-                      ));
-                    })()}
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -291,38 +283,25 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
             <div className="space-y-2">
               <Label>Split between</Label>
               <div className="flex flex-wrap gap-2">
-                {(() => {
-                  // Use the same enhanced member list as the dropdown
-                  const allMembers = [...members];
-                  const currentUserExists = members.some(m => m.user_id === currentUserId);
-                  
-                  if (!currentUserExists) {
-                    allMembers.unshift({
-                      id: `temp-${currentUserId}`,
-                      group_id: groupId,
-                      user_id: currentUserId,
-                      joined_at: new Date().toISOString(),
-                      user: { 
-                        id: currentUserId,
-                        email: '',
-                        name: 'You',
-                        created_at: new Date().toISOString()
-                      }
-                    });
-                  }
-                  
-                  return allMembers.map((member) => (
+                {members.map((member) => {
+                  console.log('Rendering member in pills:', {
+                    user_id: member.user_id,
+                    user_name: member.user?.name,
+                    display_name: member.user?.name || 'Unknown User',
+                    is_current_user: member.user_id === currentUserId
+                  });
+                  return (
                     <Badge
                       key={member.user_id}
                       variant={selectedParticipants.includes(member.user_id) ? 'default' : 'outline'}
                       className="cursor-pointer"
                       onClick={() => !saving && handleToggleParticipant(member.user_id)}
                     >
-                      {member.user?.name || 'You'}
+                      {member.user?.name || 'Unknown User'}
                       {member.user_id === currentUserId && ' (You)'}
                     </Badge>
-                  ));
-                })()}
+                  );
+                })}
               </div>
               <p className="text-xs text-muted-foreground">
                 Click to select who should split this expense

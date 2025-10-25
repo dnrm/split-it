@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,11 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [memberEmail, setMemberEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,31 +119,33 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
           </div>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Member
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsAddMemberOpen(true)}>
-              <Mail className="mr-2 h-4 w-4" />
-              Add by Email
-            </DropdownMenuItem>
-            <GroupInviteDialog
-              groupId={group.id}
-              groupName={group.name}
-              trigger={
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  Create Invite Link
-                </DropdownMenuItem>
-              }
-            />
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isMounted && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Member
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsAddMemberOpen(true)}>
+                <Mail className="mr-2 h-4 w-4" />
+                Add by Email
+              </DropdownMenuItem>
+              <GroupInviteDialog
+                groupId={group.id}
+                groupName={group.name}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Create Invite Link
+                  </DropdownMenuItem>
+                }
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
           <DialogContent>

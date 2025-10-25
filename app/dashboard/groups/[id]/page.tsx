@@ -55,14 +55,162 @@ export default async function GroupPage({ params }: GroupPageProps) {
     }
   }
 
-  // Fetch group members
-  const { data: members } = await supabase
-    .from('group_members')
-    .select(`
-      *,
-      user:users(*)
-    `)
-    .eq('group_id', id);
+  // Fetch group members with error handling
+  let allMembers: any[] = [];
+  
+  try {
+    // First try to get just the group_members data
+    const { data: memberRecords, error: memberError } = await supabase
+      .from('group_members')
+      .select('*')
+      .eq('group_id', id);
+
+    console.log('Member records:', memberRecords);
+    console.log('Member error:', memberError);
+
+    if (memberError) {
+      console.error('Error fetching member records:', memberError);
+    } else if (memberRecords && memberRecords.length > 0) {
+      // Get user IDs from member records
+      const userIds = memberRecords.map(m => m.user_id);
+      console.log('User IDs to fetch:', userIds);
+      
+      // Fetch user data separately
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .in('id', userIds);
+
+      console.log('Users data:', users);
+      console.log('Users error:', usersError);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        console.log('This might be due to RLS policies. Trying individual user fetches...');
+        
+        // Fallback: try to fetch each user individually
+        const userPromises = userIds.map(async (userId) => {
+          const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (error) {
+            console.error(`Error fetching user ${userId}:`, error);
+            return null;
+          }
+          return user;
+        });
+        
+        const individualUsers = await Promise.all(userPromises);
+        const validUsers = individualUsers.filter(user => user !== null);
+        console.log('Individual user fetch results:', validUsers);
+        
+        // Combine member records with user data
+        allMembers = memberRecords.map(member => {
+          const user = validUsers.find(u => u?.id === member.user_id);
+          console.log(`Mapping member ${member.user_id} to user:`, user);
+          
+          // If we couldn't fetch user data, create a basic user object
+          if (!user) {
+            console.log(`Creating fallback user object for ${member.user_id}`);
+            return {
+              ...member,
+              user: {
+                id: member.user_id,
+                name: `User ${member.user_id.slice(0, 8)}`, // Use first 8 chars of ID as fallback name
+                email: '',
+                created_at: new Date().toISOString()
+              }
+            };
+          }
+          
+          return {
+            ...member,
+            user: user
+          };
+        });
+      } else {
+        // Combine member records with user data
+        allMembers = memberRecords.map(member => {
+          const user = users?.find(u => u.id === member.user_id);
+          console.log(`Mapping member ${member.user_id} to user:`, user);
+          
+          // If we couldn't find user data, create a basic user object
+          if (!user) {
+            console.log(`Creating fallback user object for ${member.user_id}`);
+            return {
+              ...member,
+              user: {
+                id: member.user_id,
+                name: `User ${member.user_id.slice(0, 8)}`, // Use first 8 chars of ID as fallback name
+                email: '',
+                created_at: new Date().toISOString()
+              }
+            };
+          }
+          
+          return {
+            ...member,
+            user: user
+          };
+        });
+      }
+      
+      console.log('Combined members:', allMembers);
+      console.log('Each member user data:', allMembers.map(m => ({ id: m.user_id, name: m.user?.name, email: m.user?.email })));
+      
+      // Additional debugging for names
+      allMembers.forEach((member, index) => {
+        console.log(`Member ${index}:`, {
+          user_id: member.user_id,
+          user_name: member.user?.name,
+          user_email: member.user?.email,
+          has_user_data: !!member.user
+        });
+      });
+    }
+  } catch (error) {
+    console.error('Exception fetching members:', error);
+    allMembers = [];
+  }
+
+  // Always ensure current user is included
+  const currentUserExists = allMembers.some(m => m.user_id === user.id);
+  console.log('Current user exists in members:', currentUserExists);
+  console.log('Current user ID:', user.id);
+  console.log('All members before adding current user:', allMembers);
+  
+  if (!currentUserExists) {
+    // Fetch current user data
+    const { data: currentUser, error: currentUserError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    console.log('Current user data:', currentUser);
+    console.log('Current user error:', currentUserError);
+    
+    if (currentUser) {
+      const currentUserMember = {
+        id: `temp-${user.id}`,
+        group_id: id,
+        user_id: user.id,
+        joined_at: new Date().toISOString(),
+        user: currentUser
+      };
+      allMembers.unshift(currentUserMember);
+      console.log('Added current user to members:', currentUserMember);
+      console.log('Current user name:', currentUser.name);
+      console.log('Current user email:', currentUser.email);
+    } else {
+      console.error('Current user data not found!');
+    }
+  }
+  
+  console.log('Final allMembers:', allMembers);
 
   // Fetch expenses with splits - use the working simple query and add joins manually
   const { data: expenses, error: expensesError } = await supabase
@@ -103,7 +251,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   return (
     <div className="container max-w-7xl mx-auto px-4 py-8">
-      <GroupHeader group={group} members={members || []} currentUserId={user.id} />
+      <GroupHeader group={group} members={allMembers} currentUserId={user.id} />
 
       <Tabs defaultValue="expenses" className="mt-8">
         <TabsList className="grid w-full grid-cols-3">
@@ -115,7 +263,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
         <TabsContent value="expenses" className="space-y-6">
           <AddExpenseForm 
             groupId={id} 
-            members={members || []} 
+            members={allMembers} 
             currentUserId={user.id}
             currency={group.currency}
           />
