@@ -169,7 +169,7 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
           <div className="flex gap-2">
             <Textarea
               id="nl-input"
-              placeholder='e.g., "I paid $45 for dinner for everyone" or "Dani paid $60 for gas for Ana and Franco"'
+              placeholder='e.g., "I paid $45 for dinner for everyone" or "Dani paid $60 for gas for Andrea and Richy"'
               value={nlInput}
               onChange={(e) => setNlInput(e.target.value)}
               disabled={loading || saving}
