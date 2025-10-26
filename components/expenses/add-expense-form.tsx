@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -15,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Plus, Check, AlertCircle } from 'lucide-react';
+import { Sparkles, Plus, Check, AlertCircle, Upload, MessageSquare } from 'lucide-react';
 import { GroupMember, ParsedExpense } from '@/types';
+import { TicketUpload } from '@/components/tickets/ticket-upload';
 import { toast } from 'sonner';
 
 interface AddExpenseFormProps {
@@ -151,6 +153,10 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
     );
   };
 
+  const handleTicketUploadComplete = (ticketId: string) => {
+    router.push(`/dashboard/tickets/${ticketId}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -159,10 +165,23 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
           Add Expense
         </CardTitle>
         <CardDescription>
-          Describe the expense naturally, and AI will parse it for you
+          Add expenses using natural language or upload a receipt
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Tabs defaultValue="text" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="text" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Text Input
+            </TabsTrigger>
+            <TabsTrigger value="upload" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Receipt
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="text" className="space-y-6">
         {/* Natural Language Input */}
         <div className="space-y-3">
           <Label htmlFor="nl-input">Describe the expense</Label>
@@ -317,6 +336,15 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
             </Button>
           </div>
         )}
+          </TabsContent>
+          
+          <TabsContent value="upload" className="space-y-6">
+            <TicketUpload
+              groupId={groupId}
+              onUploadComplete={handleTicketUploadComplete}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

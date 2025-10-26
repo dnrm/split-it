@@ -120,3 +120,118 @@ export interface GroupSummary {
   tone: SummaryTone;
 }
 
+// Ticket Vision Parser Types
+export type TicketStatus = 'processing' | 'ready' | 'finalized' | 'error';
+
+export interface SharedTicket {
+  id: string;
+  group_id: string;
+  uploaded_by: string;
+  image_url: string;
+  merchant_name?: string;
+  total_amount?: number;
+  parsed_data?: any; // JSONB from database
+  status: TicketStatus;
+  created_at: string;
+  uploaded_by_user?: User;
+  items?: TicketItem[];
+}
+
+export interface TicketItem {
+  id: string;
+  ticket_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category?: string;
+  line_number: number;
+  created_at: string;
+  claims?: TicketItemClaim[];
+}
+
+export interface TicketItemClaim {
+  id: string;
+  item_id: string;
+  user_id: string;
+  quantity_claimed: number;
+  custom_amount?: number;
+  created_at: string;
+  user?: User;
+}
+
+export interface ParsedTicket {
+  merchantName: string;
+  total: number;
+  tax?: number;
+  tip?: number;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+    category?: string;
+  }>;
+  confidence: number;
+}
+
+export interface TicketItemWithClaims extends TicketItem {
+  total_claimed: number;
+  remaining_quantity: number;
+  is_fully_claimed: boolean;
+  claims: (TicketItemClaim & { user?: User })[];
+}
+
+export interface TicketClaimSummary {
+  item_id: string;
+  item_name: string;
+  item_price: number;
+  item_quantity: number;
+  total_claimed: number;
+  remaining_quantity: number;
+  is_fully_claimed: boolean;
+}
+
+export interface TicketFinalizationSummary {
+  ticketId: string;
+  merchantName: string;
+  totalAmount: number;
+  userTotals: Array<{
+    userId: string;
+    userName: string;
+    total: number;
+    items: Array<{
+      itemName: string;
+      quantity: number;
+      amount: number;
+    }>;
+  }>;
+  unclaimedItems: Array<{
+    itemName: string;
+    quantity: number;
+    amount: number;
+  }>;
+}
+
+// Extended types for API responses
+export interface SharedTicketWithDetails extends SharedTicket {
+  items: TicketItemWithClaims[];
+  group?: Group;
+}
+
+export interface TicketUploadResponse {
+  ticketId: string;
+  status: TicketStatus;
+  message: string;
+}
+
+export interface TicketClaimRequest {
+  itemId: string;
+  quantityClaimed: number;
+  customAmount?: number;
+}
+
+export interface TicketClaimResponse {
+  success: boolean;
+  message: string;
+  remainingQuantity: number;
+}
+
