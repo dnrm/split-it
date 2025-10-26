@@ -6,7 +6,8 @@ import { appFont, monoFont } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "SplitSphere - AI-Powered Expense Sharing",
-  description: "Simplify group payments through voice, natural language, and automated settlement optimization.",
+  description:
+    "Simplify group payments through voice, natural language, and automated settlement optimization.",
 };
 
 export default function RootLayout({

@@ -134,11 +134,11 @@ export default function CreateGroupPage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
+              <Button type="button" variant="outline" className="flex-1" asChild>
+                <Link href="/dashboard/groups">Cancel</Link>
+              </Button>
               <Button type="submit" className="flex-1 rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Group'}
-              </Button>
-              <Button type="button" className="flex-1 rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" asChild>
-                <Link href="/dashboard/groups">Cancel</Link>
               </Button>
             </div>
           </form>

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -14,20 +14,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, UserPlus, Users, ChevronDown, Link as LinkIcon, Mail } from 'lucide-react';
-import { Group, GroupMember } from '@/types';
-import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
-import { GroupInviteDialog } from './group-invite-dialog';
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  ArrowLeft,
+  UserPlus,
+  Users,
+  ChevronDown,
+  Link as LinkIcon,
+  Mail,
+} from "lucide-react";
+import { Group, GroupMember } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { GroupInviteDialog } from "./group-invite-dialog";
 
 interface GroupHeaderProps {
   group: Group;
@@ -35,10 +42,14 @@ interface GroupHeaderProps {
   currentUserId: string;
 }
 
-export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps) {
+export function GroupHeader({
+  group,
+  members,
+  currentUserId,
+}: GroupHeaderProps) {
   const router = useRouter();
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [memberEmail, setMemberEmail] = useState('');
+  const [memberEmail, setMemberEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -55,13 +66,13 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
 
       // Find user by email
       const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', memberEmail)
+        .from("users")
+        .select("*")
+        .eq("email", memberEmail)
         .single();
 
       if (userError || !userData) {
-        toast.error('User not found. They need to sign up first.');
+        toast.error("User not found. They need to sign up first.");
         setLoading(false);
         return;
       }
@@ -69,14 +80,14 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
       // Check if already a member
       const isAlreadyMember = members.some((m) => m.user_id === userData.id);
       if (isAlreadyMember) {
-        toast.error('This user is already a member');
+        toast.error("This user is already a member");
         setLoading(false);
         return;
       }
 
       // Add member
       const { error: memberError } = await supabase
-        .from('group_members')
+        .from("group_members")
         .insert({
           group_id: group.id,
           user_id: userData.id,
@@ -89,11 +100,11 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
 
       toast.success(`${userData.name} added to the group!`);
       setIsAddMemberOpen(false);
-      setMemberEmail('');
+      setMemberEmail("");
       router.refresh();
     } catch (error) {
-      console.error('Error adding member:', error);
-      toast.error('An unexpected error occurred');
+      console.error("Error adding member:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -101,7 +112,10 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
 
   return (
     <div className="space-y-4">
-      <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
+      <Button
+        className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+        asChild
+      >
         <Link href="/dashboard/groups">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Groups
@@ -113,7 +127,9 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
           <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
-            <span>{members.length} member{members.length !== 1 ? 's' : ''}</span>
+            <span>
+              {members.length} member{members.length !== 1 ? "s" : ""}
+            </span>
             <span>·</span>
             <Badge variant="outline">{group.currency}</Badge>
           </div>
@@ -122,7 +138,7 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
         {isMounted && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'>
+              <Button className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Member
                 <ChevronDown className="ml-2 h-4 w-4" />
@@ -174,11 +190,19 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' onClick={() => setIsAddMemberOpen(false)}>
+                <Button
+                  type="button"
+                  className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+                  onClick={() => setIsAddMemberOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' disabled={loading}>
-                  {loading ? 'Adding...' : 'Add Member'}
+                <Button
+                  type="submit"
+                  className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+                  disabled={loading}
+                >
+                  {loading ? "Adding..." : "Add Member"}
                 </Button>
               </DialogFooter>
             </form>
@@ -195,16 +219,13 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
           >
             <Avatar className="h-6 w-6">
               <AvatarFallback className="text-xs">
-                {member.user?.name?.charAt(0).toUpperCase() || '?'}
+                {member.user?.name?.charAt(0).toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">
-              {member.user?.name}
-            </span>
+            <span className="text-sm font-medium">{member.user?.name}</span>
           </div>
         ))}
       </div>
     </div>
   );
 }
-

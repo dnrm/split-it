@@ -1,9 +1,9 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { Card, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
-import { Receipt } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
+import { Receipt } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function ExpensesPage() {
   const supabase = await createClient();
@@ -13,52 +13,54 @@ export default async function ExpensesPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect("/auth/login");
   }
 
   // Fetch user's group IDs
   const { data: memberships } = await supabase
-    .from('group_members')
-    .select('group_id')
-    .eq('user_id', user.id);
+    .from("group_members")
+    .select("group_id")
+    .eq("user_id", user.id);
 
   const groupIds = memberships?.map((m) => m.group_id) || [];
 
   // Fetch all expenses from user's groups
   const { data: expenses, error: expensesError } = await supabase
-    .from('expenses')
-    .select(`
+    .from("expenses")
+    .select(
+      `
       *,
       group:groups(name, currency)
-    `)
-    .in('group_id', groupIds)
-    .order('created_at', { ascending: false })
+    `
+    )
+    .in("group_id", groupIds)
+    .order("created_at", { ascending: false })
     .limit(50);
 
   // Log error for debugging
   if (expensesError) {
-    console.error('Error fetching expenses:', expensesError);
+    console.error("Error fetching expenses:", expensesError);
   }
 
   // If we have expenses, fetch payer information separately
   let expensesWithPayer = expenses;
   if (expenses && expenses.length > 0) {
     // Get unique payer IDs
-    const payerIds = [...new Set(expenses.map(exp => exp.payer_id))];
-    
+    const payerIds = [...new Set(expenses.map((exp) => exp.payer_id))];
+
     // Fetch payer information
     const { data: payers } = await supabase
-      .from('users')
-      .select('*')
-      .in('id', payerIds);
-    
+      .from("users")
+      .select("*")
+      .in("id", payerIds);
+
     // Create a map for quick lookup
-    const payerMap = new Map(payers?.map(p => [p.id, p]) || []);
-    
+    const payerMap = new Map(payers?.map((p) => [p.id, p]) || []);
+
     // Merge payer data with expenses
-    expensesWithPayer = expenses.map(expense => ({
+    expensesWithPayer = expenses.map((expense) => ({
       ...expense,
-      payer: payerMap.get(expense.payer_id)
+      payer: payerMap.get(expense.payer_id),
     }));
   }
 
@@ -66,7 +68,9 @@ export default async function ExpensesPage() {
     <div className="container max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">All Expenses</h1>
-        <p className="text-muted-foreground">Recent expenses across all your groups</p>
+        <p className="text-muted-foreground">
+          Recent expenses across all your groups
+        </p>
       </div>
 
       {!expensesWithPayer || expensesWithPayer.length === 0 ? (
@@ -80,7 +84,7 @@ export default async function ExpensesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {expensesWithPayer.map((expense) => (
             <Link
               key={expense.id}
@@ -88,7 +92,7 @@ export default async function ExpensesPage() {
               className="block"
             >
               <Card className="transition-all hover:shadow-md">
-                <CardContent className="flex items-start justify-between p-4">
+                <CardContent className="flex items-start justify-between px-4 py-0">
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{expense.description}</h3>
@@ -107,7 +111,10 @@ export default async function ExpensesPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold">
-                      {formatCurrency(Number(expense.amount), expense.group?.currency)}
+                      {formatCurrency(
+                        Number(expense.amount),
+                        expense.group?.currency
+                      )}
                     </p>
                   </div>
                 </CardContent>
@@ -119,4 +126,3 @@ export default async function ExpensesPage() {
     </div>
   );
 }
-
