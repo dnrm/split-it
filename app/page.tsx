@@ -7,7 +7,7 @@ export default function Home() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">SplitSphere</span>
@@ -24,8 +24,8 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1">
-        <section className="container px-4 py-16 md:py-24">
+      <main className="flex-1 flex flex-col justify-center">
+        <section className="container mx-auto px-4 py-16 md:py-24">
           <div className="mx-auto flex max-w-[980px] flex-col items-center gap-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border bg-background px-4 py-1.5 text-sm">
               <Sparkles className="h-4 w-4" />
@@ -54,7 +54,7 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="container px-4 py-16">
+        <section className="container mx-auto px-4 py-16">
           <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col gap-3 rounded-lg border bg-card p-6">
               <MessageSquare className="h-10 w-10 text-primary" />
@@ -81,7 +81,7 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="container px-4 py-16">
+        <section className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-[800px] rounded-lg border bg-card p-8 text-center md:p-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Ready to simplify your group expenses?
@@ -100,7 +100,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t py-6 md:py-8">
-        <div className="container flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             <span className="font-semibold">SplitSphere</span>
