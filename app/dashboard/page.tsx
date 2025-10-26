@@ -80,7 +80,7 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Welcome back, {user.user_metadata?.name || 'User'}!</p>
         </div>
-        <Button asChild>
+        <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
           <Link href="/dashboard/groups/create">
             <Plus className="mr-2 h-4 w-4" />
             New Group
@@ -133,7 +133,7 @@ export default async function DashboardPage() {
                 <CardTitle>Your Groups</CardTitle>
                 <CardDescription>Groups you're a member of</CardDescription>
               </div>
-              <Button variant="outline" size="sm" asChild>
+              <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' size="sm" asChild>
                 <Link href="/dashboard/groups">View All</Link>
               </Button>
             </div>
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
                 <Users className="mb-4 h-12 w-12 text-muted-foreground" />
                 <p className="mb-2 text-sm font-medium">No groups yet</p>
                 <p className="mb-4 text-xs text-muted-foreground">Create your first group to start tracking expenses</p>
-                <Button size="sm" asChild>
+                <Button size="sm" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
                   <Link href="/dashboard/groups/create">
                     <Plus className="mr-2 h-4 w-4" />
                     Create Group

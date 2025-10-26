@@ -101,7 +101,7 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" asChild>
+      <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
         <Link href="/dashboard/groups">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Groups
@@ -122,7 +122,7 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
         {isMounted && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button>
+              <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Member
                 <ChevronDown className="ml-2 h-4 w-4" />
@@ -174,10 +174,10 @@ export function GroupHeader({ group, members, currentUserId }: GroupHeaderProps)
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddMemberOpen(false)}>
+                <Button type="button" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' onClick={() => setIsAddMemberOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' disabled={loading}>
                   {loading ? 'Adding...' : 'Add Member'}
                 </Button>
               </DialogFooter>

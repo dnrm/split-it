@@ -134,13 +134,12 @@ function LoginForm() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-3">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
             <Button
               type="button"
-              variant="outline"
-              className="w-full"
+              className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
               onClick={handleMagicLink}
               disabled={loading}
             >

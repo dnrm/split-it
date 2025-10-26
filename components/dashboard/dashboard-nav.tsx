@@ -84,7 +84,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
           {mounted && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button className="rounded-full bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" size="icon">
                   <UserIcon className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -115,7 +115,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
           {mounted && (
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
+                <Button className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>

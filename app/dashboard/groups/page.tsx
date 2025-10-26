@@ -61,7 +61,7 @@ export default async function GroupsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Groups</h1>
           <p className="text-muted-foreground">Manage your expense groups</p>
         </div>
-        <Button asChild>
+        <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
           <Link href="/dashboard/groups/create">
             <Plus className="mr-2 h-4 w-4" />
             Create Group
@@ -78,7 +78,7 @@ export default async function GroupsPage() {
             <p className="mb-6 text-center text-sm text-muted-foreground">
               Create your first group to start tracking shared expenses with friends or family
             </p>
-            <Button asChild>
+            <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
               <Link href="/dashboard/groups/create">
                 <Plus className="mr-2 h-4 w-4" />
                 Create Your First Group

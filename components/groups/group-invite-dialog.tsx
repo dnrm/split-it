@@ -235,7 +235,7 @@ export function GroupInviteDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button>
+          <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'>
             <LinkIcon className="mr-2 h-4 w-4" />
             Create Invite Link
           </Button>
@@ -309,7 +309,7 @@ export function GroupInviteDialog({
               <Button
                 onClick={handleCreateInvitation}
                 disabled={loading}
-                className="w-full"
+                className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
               >
                 {loading ? 'Creating...' : 'Create Invitation'}
               </Button>
@@ -358,25 +358,23 @@ export function GroupInviteDialog({
               <div className="flex gap-2">
                 <Button
                   onClick={() => handleCopyLink(selectedInvitation.code)}
-                  className="flex-1"
+                  className='flex-1 rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                 >
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className='mr-2 h-4 w-4' />
                   Copy Link
                 </Button>
                 <Button
                   onClick={() => handleShare(selectedInvitation.code)}
-                  variant="outline"
-                  className="flex-1"
+                  className='flex-1 rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                 >
-                  <Share2 className="mr-2 h-4 w-4" />
+                  <Share2 className='mr-2 h-4 w-4' />
                   Share
                 </Button>
               </div>
 
               <Button
                 onClick={() => setShowQR(!showQR)}
-                variant="outline"
-                className="w-full"
+                className='w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
               >
                 <QrCodeIcon className="mr-2 h-4 w-4" />
                 {showQR ? 'Hide QR Code' : 'Show QR Code'}
@@ -394,8 +392,7 @@ export function GroupInviteDialog({
 
               <Button
                 onClick={handleRegenerateExpired}
-                variant="ghost"
-                className="w-full"
+                className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Create Another Invitation
@@ -453,31 +450,31 @@ export function GroupInviteDialog({
                             {!expired && !usageLimitReached && (
                               <>
                                 <Button
-                                  size="sm"
-                                  variant="ghost"
+                                  size='sm'
+                                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                                   onClick={() => handleCopyLink(invitation.code)}
                                 >
-                                  <Copy className="h-4 w-4" />
+                                  <Copy className='h-4 w-4' />
                                 </Button>
                                 <Button
-                                  size="sm"
-                                  variant="ghost"
+                                  size='sm'
+                                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                                   onClick={() => handleShare(invitation.code)}
                                 >
-                                  <Share2 className="h-4 w-4" />
+                                  <Share2 className='h-4 w-4' />
                                 </Button>
                                 <Button
-                                  size="sm"
-                                  variant="ghost"
+                                  size='sm'
+                                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                                   onClick={() => toggleQRForInvitation(invitation)}
                                 >
-                                  <QrCodeIcon className="h-4 w-4" />
+                                  <QrCodeIcon className='h-4 w-4' />
                                 </Button>
                               </>
                             )}
                             <Button
-                              size="sm"
-                              variant="ghost"
+                              size='sm'
+                              className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                               onClick={() => handleRevoke(invitation.code)}
                             >
                               <Trash2 className="h-4 w-4" />

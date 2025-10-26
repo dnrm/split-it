@@ -179,7 +179,7 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
           <Button
             onClick={handleParse}
             disabled={loading || saving || !nlInput.trim()}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             {loading ? 'Parsing...' : 'Parse with AI'}
@@ -311,7 +311,7 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
             <Button
               onClick={handleSave}
               disabled={saving || !amount || !payerId || selectedParticipants.length === 0}
-              className="w-full"
+              className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
             >
               {saving ? 'Saving...' : 'Save Expense'}
             </Button>

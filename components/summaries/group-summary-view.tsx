@@ -124,31 +124,30 @@ export function GroupSummaryView({ expenses, groupName }: GroupSummaryViewProps)
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant="outline"
+                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                   onClick={() => handleGenerate('formal')}
                   disabled={loading}
                 >
                   Formal
                 </Button>
                 <Button
-                  variant="outline"
+                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                   onClick={() => handleGenerate('casual')}
                   disabled={loading}
                 >
                   Casual
                 </Button>
                 <Button
-                  variant="outline"
+                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                   onClick={() => handleGenerate('sarcastic')}
                   disabled={loading}
                 >
                   Sarcastic
                 </Button>
                 <Button
-                  variant="outline"
+                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                   onClick={() => handleGenerate('roast')}
                   disabled={loading}
-                  className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
                 >
                   🔥 Roast
                 </Button>
@@ -171,7 +170,7 @@ export function GroupSummaryView({ expenses, groupName }: GroupSummaryViewProps)
                   {tone.charAt(0).toUpperCase() + tone.slice(1)} tone
                 </Badge>
                 <Button
-                  variant="ghost"
+                  className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                   size="sm"
                   onClick={() => setSummary(null)}
                 >

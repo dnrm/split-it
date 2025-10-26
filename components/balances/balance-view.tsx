@@ -128,7 +128,7 @@ export function BalanceView({ expenses, currency, currentUserId }: BalanceViewPr
                       {formatCurrency(settlement.amount, currency)}
                     </span>
                     <Button
-                      variant="ghost"
+                      className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                       size="icon"
                       onClick={() => handleCopyAmount(settlement.amount)}
                     >
@@ -229,7 +229,7 @@ export function BalanceView({ expenses, currency, currentUserId }: BalanceViewPr
                     {formatCurrency(settlement.amount, currency)}
                   </span>
                   <Button
-                    variant="ghost"
+                    className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary'
                     size="icon"
                     onClick={() => handleCopyAmount(settlement.amount)}
                   >
