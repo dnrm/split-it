@@ -80,7 +80,7 @@ export default function CreateGroupPage() {
   return (
     <div className="container max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <Button variant="ghost" asChild>
+        <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
           <Link href="/dashboard/groups">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Groups
@@ -134,11 +134,11 @@ export default function CreateGroupPage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button type="submit" className="flex-1" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Group'}
-              </Button>
-              <Button type="button" variant="outline" asChild className="flex-1">
+              <Button type="button" variant="outline" className="flex-1" asChild>
                 <Link href="/dashboard/groups">Cancel</Link>
+              </Button>
+              <Button type="submit" className="flex-1 rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" disabled={loading}>
+                {loading ? 'Creating...' : 'Create Group'}
               </Button>
             </div>
           </form>

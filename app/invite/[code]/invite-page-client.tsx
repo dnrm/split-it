@@ -36,7 +36,7 @@ export function InvitePageClient({ code, invitation, user }: InvitePageClientPro
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild className="w-full">
+            <Button asChild className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary">
               <Link href="/dashboard">Go to Dashboard</Link>
             </Button>
           </CardContent>
@@ -149,19 +149,19 @@ export function InvitePageClient({ code, invitation, user }: InvitePageClientPro
                 <Button
                   onClick={handleJoinGroup}
                   disabled={loading}
-                  className="w-full"
+                  className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
                   size="lg"
                 >
                   {loading ? 'Joining...' : 'Join Group'}
                 </Button>
               ) : (
                 <>
-                  <Button asChild className="w-full" size="lg">
+                  <Button asChild className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" size="lg">
                     <Link href={`/auth/login?redirect=${redirectUrl}`}>
                       Sign In to Join
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="w-full" size="lg">
+                  <Button asChild className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" size="lg">
                     <Link href={`/auth/signup?redirect=${redirectUrl}`}>
                       Sign Up to Join
                     </Link>
@@ -172,7 +172,7 @@ export function InvitePageClient({ code, invitation, user }: InvitePageClientPro
           )}
 
           {!validation.valid && (
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary">
               <Link href="/dashboard">Go to Dashboard</Link>
             </Button>
           )}

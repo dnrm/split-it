@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { User } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,21 +13,30 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Sparkles, Home, Users, Receipt, DollarSign, Menu, LogOut, User as UserIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/theme-toggle';
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sparkles,
+  Home,
+  Users,
+  Receipt,
+  DollarSign,
+  Menu,
+  LogOut,
+  User as UserIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface DashboardNavProps {
   user: User;
 }
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/groups', label: 'Groups', icon: Users },
-  { href: '/dashboard/expenses', label: 'Expenses', icon: Receipt },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
+  { href: "/dashboard/groups", label: "Groups", icon: Users },
+  { href: "/dashboard/expenses", label: "Expenses", icon: Receipt },
 ];
 
 export function DashboardNav({ user }: DashboardNavProps) {
@@ -44,14 +53,14 @@ export function DashboardNav({ user }: DashboardNavProps) {
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    toast.success('Signed out successfully');
-    router.push('/');
+    toast.success("Signed out successfully");
+    router.push("/");
     router.refresh();
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container flex h-16 items-center justify-between px-4 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
@@ -62,14 +71,18 @@ export function DashboardNav({ user }: DashboardNavProps) {
         <nav className="hidden md:flex md:items-center md:gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/dashboard" && pathname?.startsWith(item.href));
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
-                  isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -84,15 +97,26 @@ export function DashboardNav({ user }: DashboardNavProps) {
           {mounted && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <UserIcon className="h-5 w-5" />
+                <Button
+                  className="rounded-full bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+                  size="icon"
+                >
+                  <span className="text-sm font-semibold">
+                    {(user.user_metadata?.name || user.email || "U")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">{user.user_metadata?.name || 'User'}</span>
-                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                    <span className="text-sm font-medium">
+                      {user.user_metadata?.name || "User"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -115,7 +139,10 @@ export function DashboardNav({ user }: DashboardNavProps) {
           {mounted && (
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
+                <Button
+                  className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+                  size="icon"
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -128,15 +155,20 @@ export function DashboardNav({ user }: DashboardNavProps) {
                   <nav className="flex flex-col gap-1">
                     {navItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+                      const isActive =
+                        pathname === item.href ||
+                        (item.href !== "/dashboard" &&
+                          pathname?.startsWith(item.href));
                       return (
                         <Link
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsOpen(false)}
                           className={cn(
-                            'flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
-                            isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+                            "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground"
                           )}
                         >
                           <Icon className="h-5 w-5" />
@@ -154,4 +186,3 @@ export function DashboardNav({ user }: DashboardNavProps) {
     </header>
   );
 }
-
