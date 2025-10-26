@@ -61,7 +61,10 @@ export async function POST(
     // Get all group members
     const { data: groupMembers, error: membersError } = await supabase
       .from('group_members')
-      .select('user_id')
+      .select(`
+        user_id,
+        users!inner(name)
+      `)
       .eq('group_id', ticket.group_id);
 
     if (membersError || !groupMembers) {
@@ -89,7 +92,7 @@ export async function POST(
       if (userTotal > 0) {
         userTotals.set(member.user_id, {
           userId: member.user_id,
-          userName: (member.user as any)?.name || 'Unknown',
+          userName: member.users?.[0]?.name || 'Unknown',
           total: userTotal,
           items: [], // Will be populated below
         });
@@ -162,7 +165,7 @@ export async function POST(
           } else {
             userTotals.set(member.user_id, {
               userId: member.user_id,
-              userName: (member.user as any)?.name || 'Unknown',
+              userName: member.users?.[0]?.name || 'Unknown',
               total: splitAmount,
               items: [{
                 itemName: 'Unclaimed items (split equally)',
