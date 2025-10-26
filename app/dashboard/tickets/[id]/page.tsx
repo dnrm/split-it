@@ -28,12 +28,13 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<SharedTicket | null>(null);
   const [items, setItems] = useState<TicketItemWithClaims[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [groupMembers, setGroupMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchTicketData = async () => {
     try {
-      // Fetch ticket details
+      // Fetch ticket details with items
       const ticketResponse = await fetch(`/api/tickets/${ticketId}`);
       if (!ticketResponse.ok) {
         const errorData = await ticketResponse.json();
@@ -42,22 +43,38 @@ export default function TicketDetailPage() {
       }
       const ticketData = await ticketResponse.json();
       setTicket(ticketData.ticket);
-
-      // Fetch ticket items
-      const itemsResponse = await fetch(`/api/tickets/${ticketId}/items`);
-      if (!itemsResponse.ok) {
-        const errorData = await itemsResponse.json();
-        console.error('Items fetch error:', errorData);
-        throw new Error(`Failed to fetch items: ${errorData.error || 'Unknown error'}`);
-      }
-      const itemsData = await itemsResponse.json();
-      setItems(itemsData.items);
+      
+      // Set items from ticket data
+      setItems(ticketData.ticket.items || []);
 
       // Fetch current user
-      const userResponse = await fetch('/api/auth/user');
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setCurrentUser(userData.user);
+      try {
+        const userResponse = await fetch('/api/auth/user');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData.user);
+        } else {
+          console.warn('Failed to fetch current user:', userResponse.status);
+        }
+      } catch (error) {
+        console.warn('Error fetching current user:', error);
+      }
+
+      // Fetch group members if ticket has group_id
+      if (ticketData.ticket.group_id) {
+        try {
+          const membersResponse = await fetch(`/api/groups/${ticketData.ticket.group_id}/members`);
+          if (membersResponse.ok) {
+            const membersData = await membersResponse.json();
+            setGroupMembers(membersData.members || []);
+          } else {
+            console.warn('Failed to fetch group members:', membersResponse.status);
+            setGroupMembers([]);
+          }
+        } catch (error) {
+          console.warn('Error fetching group members:', error);
+          setGroupMembers([]);
+        }
       }
 
     } catch (error) {
@@ -239,6 +256,8 @@ export default function TicketDetailPage() {
           <TicketViewer
             ticket={ticket}
             onRetry={handleRetryParse}
+            onStatusUpdate={refreshData}
+            canEditStatus={true}
           />
         </div>
 
@@ -250,6 +269,7 @@ export default function TicketDetailPage() {
               items={items}
               currentUser={currentUser}
               onClaimUpdate={refreshData}
+              groupMembers={groupMembers}
             />
           </div>
         )}

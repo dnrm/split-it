@@ -31,10 +31,13 @@ export async function GET(
       );
     }
 
-    // Fetch ticket with uploader info
+    // Fetch ticket with items
     const { data: ticket, error: ticketError } = await supabase
       .from('shared_tickets')
-      .select('*')
+      .select(`
+        *,
+        items:ticket_items(*)
+      `)
       .eq('id', ticketId)
       .single();
 
@@ -65,7 +68,53 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ ticket, success: true });
+    // Fetch uploader information
+    const { data: uploaderUser } = await supabase
+      .from('users')
+      .select('id, name, email, avatar_url')
+      .eq('id', ticket.uploaded_by)
+      .single();
+
+    // Calculate remaining quantities and add claim information for items
+    if (ticket.items && ticket.items.length > 0) {
+      // Fetch claims for all items
+      const itemIds = ticket.items.map((item: any) => item.id);
+      const { data: claims } = await supabase
+        .from('ticket_item_claims')
+        .select('*, user:users(id, name, email, avatar_url)')
+        .in('item_id', itemIds);
+
+      // Group claims by item_id
+      const claimsByItem = new Map<string, any[]>();
+      claims?.forEach((claim: any) => {
+        if (!claimsByItem.has(claim.item_id)) {
+          claimsByItem.set(claim.item_id, []);
+        }
+        claimsByItem.get(claim.item_id)?.push(claim);
+      });
+
+      // Add claims and calculate remaining quantities for each item
+      ticket.items.forEach((item: any) => {
+        const itemClaims = claimsByItem.get(item.id) || [];
+        const totalClaimed = itemClaims.reduce(
+          (sum: number, claim: any) => sum + (claim.quantity_claimed || 0),
+          0
+        );
+        
+        item.claims = itemClaims;
+        item.total_claimed = totalClaimed;
+        item.remaining_quantity = item.quantity - totalClaimed;
+        item.is_fully_claimed = item.remaining_quantity <= 0;
+      });
+    }
+
+    // Add uploader info to ticket
+    const ticketWithUploader = {
+      ...ticket,
+      uploaded_by_user: uploaderUser
+    };
+
+    return NextResponse.json({ ticket: ticketWithUploader, success: true });
 
   } catch (error) {
     console.error('Error fetching ticket:', error);

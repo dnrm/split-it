@@ -79,23 +79,55 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🚀 Starting claim POST request');
+    
     const supabase = await createClient();
+    console.log('✅ Supabase client created');
     
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    console.log('👤 User auth result:', { hasUser: !!user, userId: user?.id });
 
     if (!user) {
+      console.log('❌ No user found, returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: ticketId } = await params;
-    const body = await request.json();
+    console.log('🎫 Ticket ID:', ticketId);
+    
+    let body;
+    try {
+      body = await request.json();
+      console.log('🔍 Claim request body:', JSON.stringify(body, null, 2));
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+    
     const { itemId, quantityClaimed, customAmount }: TicketClaimRequest = body;
 
-    if (!itemId || !quantityClaimed || quantityClaimed <= 0) {
+    console.log('🔍 Parsed data:', { 
+      itemId, 
+      quantityClaimed, 
+      customAmount,
+      itemIdType: typeof itemId,
+      quantityType: typeof quantityClaimed,
+      hasItemId: !!itemId,
+      isQuantityValid: quantityClaimed !== undefined && quantityClaimed !== null && quantityClaimed >= 0
+    });
+
+    if (!itemId || quantityClaimed === undefined || quantityClaimed === null || quantityClaimed < 0) {
+      console.log('❌ Validation failed:', { 
+        hasItemId: !!itemId, 
+        quantityClaimed, 
+        isValidQuantity: quantityClaimed >= 0,
+        itemId,
+        customAmount
+      });
       return NextResponse.json(
-        { error: 'Invalid claim data' },
+        { error: 'Invalid claim data', debug: { itemId, quantityClaimed, customAmount } },
         { status: 400 }
       );
     }
@@ -181,6 +213,33 @@ export async function POST(
       );
     }
 
+    // Handle case where quantityClaimed is 0 (remove claim)
+    if (quantityClaimed === 0) {
+      if (userClaim) {
+        // Delete existing claim
+        const { error: deleteError } = await supabase
+          .from('ticket_item_claims')
+          .delete()
+          .eq('id', userClaim.id);
+
+        if (deleteError) {
+          console.error('Error deleting claim:', deleteError);
+          return NextResponse.json(
+            { error: 'Failed to delete claim' },
+            { status: 500 }
+          );
+        }
+      }
+
+      const response: TicketClaimResponse = {
+        success: true,
+        message: 'Claim removed successfully',
+        remainingQuantity: remainingQuantity + (userClaim?.quantity_claimed || 0),
+      };
+
+      return NextResponse.json(response);
+    }
+
     // Validate claim quantity
     if (quantityClaimed > remainingQuantity) {
       const response: TicketClaimResponse = {
@@ -249,9 +308,14 @@ export async function POST(
     }
 
   } catch (error) {
-    console.error('Error processing claim:', error);
+    console.error('💥 Unexpected error in claim processing:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to process claim' },
+      { 
+        error: 'Failed to process claim', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        debug: process.env.NODE_ENV === 'development' ? error : undefined
+      },
       { status: 500 }
     );
   }

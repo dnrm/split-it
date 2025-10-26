@@ -25,10 +25,13 @@ export async function GET(request: NextRequest) {
 
     const groupIds = memberships.map(m => m.group_id);
 
-    // Fetch all tickets from user's groups
+    // Fetch all tickets from user's groups with items
     const { data: tickets, error: ticketsError } = await supabase
       .from('shared_tickets')
-      .select('*')
+      .select(`
+        *,
+        items:ticket_items(*)
+      `)
       .in('group_id', groupIds)
       .order('created_at', { ascending: false });
 
@@ -40,7 +43,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ tickets: tickets || [], success: true });
+    // Fetch uploader information for all tickets
+    const ticketsWithUploaders = await Promise.all(
+      (tickets || []).map(async (ticket) => {
+        const { data: uploaderUser } = await supabase
+          .from('users')
+          .select('id, name, email, avatar_url')
+          .eq('id', ticket.uploaded_by)
+          .single();
+
+        return {
+          ...ticket,
+          uploaded_by_user: uploaderUser
+        };
+      })
+    );
+
+    return NextResponse.json({ tickets: ticketsWithUploaders, success: true });
 
   } catch (error) {
     console.error('Error fetching tickets:', error);

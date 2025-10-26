@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Store, 
   Calendar, 
@@ -13,7 +14,8 @@ import {
   AlertCircle, 
   CheckCircle, 
   Clock,
-  RefreshCw
+  RefreshCw,
+  Settings
 } from 'lucide-react';
 import { SharedTicket, TicketItem } from '@/types';
 import { format } from 'date-fns';
@@ -21,11 +23,14 @@ import { format } from 'date-fns';
 interface TicketViewerProps {
   ticket: SharedTicket;
   onRetry?: () => void;
+  onStatusUpdate?: () => void;
   className?: string;
+  canEditStatus?: boolean;
 }
 
-export function TicketViewer({ ticket, onRetry, className }: TicketViewerProps) {
+export function TicketViewer({ ticket, onRetry, onStatusUpdate, className, canEditStatus = false }: TicketViewerProps) {
   const [imageError, setImageError] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -72,6 +77,41 @@ export function TicketViewer({ ticket, onRetry, className }: TicketViewerProps) 
     }
   };
 
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (newStatus === ticket.status) return;
+    
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update status');
+      }
+
+      onStatusUpdate?.();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      // You might want to show a toast here
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const getValidStatusTransitions = (currentStatus: string) => {
+    const transitions: Record<string, string[]> = {
+      'processing': ['ready', 'error'],
+      'ready': ['finalized', 'error'],
+      'finalized': [],
+      'error': ['processing', 'ready']
+    };
+    return transitions[currentStatus] || [];
+  };
+
   return (
     <div className={className}>
       {/* Ticket Header */}
@@ -90,7 +130,7 @@ export function TicketViewer({ ticket, onRetry, className }: TicketViewerProps) 
                 </span>
                 <span className="flex items-center gap-1">
                   <User className="h-4 w-4" />
-                  Unknown User
+                  {ticket.uploaded_by_user?.name || 'Unknown User'}
                 </span>
               </CardDescription>
             </div>
@@ -99,6 +139,25 @@ export function TicketViewer({ ticket, onRetry, className }: TicketViewerProps) 
               <Badge className={getStatusColor(ticket.status)}>
                 {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
               </Badge>
+              
+              {canEditStatus && getValidStatusTransitions(ticket.status).length > 0 && (
+                <Select
+                  value={ticket.status}
+                  onValueChange={handleStatusUpdate}
+                  disabled={updatingStatus}
+                >
+                  <SelectTrigger className="w-auto h-8 px-2">
+                    <Settings className="h-4 w-4" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getValidStatusTransitions(ticket.status).map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
         </CardHeader>

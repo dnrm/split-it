@@ -74,11 +74,11 @@ export async function GET(
       );
     }
 
-    // Fetch user information for claims
+    // Fetch user information for claims and calculate remaining quantities
     if (items && items.length > 0) {
       const claimUserIds = new Set<string>();
-      items.forEach(item => {
-        item.claims?.forEach(claim => {
+      items.forEach((item: any) => {
+        item.claims?.forEach((claim: any) => {
           claimUserIds.add(claim.user_id);
         });
       });
@@ -90,16 +90,28 @@ export async function GET(
           .in('id', Array.from(claimUserIds));
 
         if (!usersError && users) {
-          const userMap = new Map(users.map(user => [user.id, user]));
+          const userMap = new Map(users.map((user: any) => [user.id, user]));
           
           // Add user data to claims
-          items.forEach(item => {
-            item.claims?.forEach(claim => {
+          items.forEach((item: any) => {
+            item.claims?.forEach((claim: any) => {
               claim.user = userMap.get(claim.user_id);
             });
           });
         }
       }
+      
+      // Calculate remaining quantities for each item
+      items.forEach((item: any) => {
+        const totalClaimed = item.claims?.reduce(
+          (sum: number, claim: any) => sum + (claim.quantity_claimed || 0),
+          0
+        ) || 0;
+        
+        item.total_claimed = totalClaimed;
+        item.remaining_quantity = item.quantity - totalClaimed;
+        item.is_fully_claimed = item.remaining_quantity <= 0;
+      });
     }
 
     return NextResponse.json({ items: items || [], success: true });

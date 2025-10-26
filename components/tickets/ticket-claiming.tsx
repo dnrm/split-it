@@ -27,6 +27,7 @@ interface TicketClaimingProps {
   currentUser: User;
   onClaimUpdate?: () => void;
   className?: string;
+  groupMembers?: User[];
 }
 
 export function TicketClaiming({ 
@@ -34,9 +35,10 @@ export function TicketClaiming({
   items, 
   currentUser, 
   onClaimUpdate,
-  className 
+  className,
+  groupMembers = []
 }: TicketClaimingProps) {
-  const [claimMode, setClaimMode] = useState<'simple' | 'advanced'>('simple');
+  const [claimMode, setClaimMode] = useState<'simple' | 'advanced' | 'multi-assign'>('simple');
   const [claiming, setClaiming] = useState<string | null>(null);
   const [claimData, setClaimData] = useState<Record<string, {
     quantity: number;
@@ -45,6 +47,14 @@ export function TicketClaiming({
 
   // Initialize claim data
   useEffect(() => {
+    console.log('📦 Items data for claiming:', items.map(item => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      remaining_quantity: item.remaining_quantity,
+      claims: item.claims?.length || 0
+    })));
+    
     const initialData: Record<string, { quantity: number; customAmount?: number }> = {};
     
     items.forEach(item => {
@@ -83,10 +93,23 @@ export function TicketClaiming({
   };
 
   const handleSimpleClaim = async (itemId: string, checked: boolean) => {
+    console.log('🎯 handleSimpleClaim called:', { itemId, checked });
     const item = items.find(i => i.id === itemId);
-    if (!item) return;
+    console.log('🔍 Found item:', item);
+    
+    if (!item) {
+      console.error('❌ Item not found for ID:', itemId);
+      return;
+    }
 
     const quantity = checked ? item.remaining_quantity : 0;
+    console.log('📊 Calculated quantity:', { 
+      checked, 
+      remaining_quantity: item.remaining_quantity, 
+      quantity,
+      quantityType: typeof quantity
+    });
+    
     await updateClaim(itemId, quantity);
   };
 
@@ -95,23 +118,63 @@ export function TicketClaiming({
   };
 
   const updateClaim = async (itemId: string, quantity: number, customAmount?: number) => {
+    console.log('🔄 updateClaim called with:', { itemId, quantity, customAmount, quantityType: typeof quantity });
+    
+    // Validate inputs before proceeding
+    if (!itemId) {
+      console.error('❌ itemId is required');
+      toast.error('Invalid item ID');
+      return;
+    }
+    
+    if (quantity === undefined || quantity === null || isNaN(quantity)) {
+      console.error('❌ quantity is invalid:', quantity);
+      toast.error('Invalid quantity');
+      return;
+    }
+    
     setClaiming(itemId);
     
+    const requestBody = {
+      itemId: itemId,
+      quantityClaimed: Number(quantity),
+      ...(customAmount !== undefined && { customAmount: Number(customAmount) })
+    };
+    
+    console.log('🚀 Request body before stringify:', requestBody);
+    const bodyString = JSON.stringify(requestBody);
+    console.log('📝 Stringified body:', bodyString);
+    
     try {
+      console.log('🌐 Making request to:', `/api/tickets/${ticketId}/claims`);
+      
       const response = await fetch(`/api/tickets/${ticketId}/claims`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemId,
-          quantityClaimed: quantity,
-          customAmount,
-        }),
+        body: bodyString,
       });
 
-      const data = await response.json();
+      console.log('📡 Response received:', { 
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      let data;
+      try {
+        data = await response.json();
+        console.log('📥 Claim response data:', data);
+      } catch (jsonError) {
+        console.error('❌ Failed to parse response JSON:', jsonError);
+        const textResponse = await response.text();
+        console.error('📄 Raw response text:', textResponse);
+        throw new Error(`Invalid response format: ${textResponse}`);
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update claim');
+        console.error('❌ Claim request failed:', { status: response.status, data });
+        throw new Error(data?.error || `Request failed with status ${response.status}`);
       }
 
       toast.success('Claim updated successfully');
@@ -206,8 +269,8 @@ export function TicketClaiming({
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={claimMode} onValueChange={(value) => setClaimMode(value as 'simple' | 'advanced')}>
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={claimMode} onValueChange={(value) => setClaimMode(value as 'simple' | 'advanced' | 'multi-assign')}>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="simple" className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Simple
@@ -215,6 +278,10 @@ export function TicketClaiming({
               <TabsTrigger value="advanced" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Advanced
+              </TabsTrigger>
+              <TabsTrigger value="multi-assign" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Multi-Assign
               </TabsTrigger>
             </TabsList>
 
@@ -237,9 +304,15 @@ export function TicketClaiming({
                         <div className="flex items-center gap-3 mb-2">
                           <Checkbox
                             checked={isClaimed}
-                            onCheckedChange={(checked) => 
-                              handleSimpleClaim(item.id, checked as boolean)
-                            }
+                            onCheckedChange={(checked) => {
+                              console.log('🔘 Checkbox clicked:', { 
+                                itemId: item.id, 
+                                checked, 
+                                checkedType: typeof checked,
+                                remaining_quantity: item.remaining_quantity 
+                              });
+                              handleSimpleClaim(item.id, checked as boolean);
+                            }}
                             disabled={claiming === item.id || item.remaining_quantity <= 0}
                           />
                           <div className="flex-1 min-w-0">
@@ -467,6 +540,154 @@ export function TicketClaiming({
                           </div>
                         </div>
                       )}
+                    </div>
+                  </div>
+                );
+              })}
+            </TabsContent>
+
+            <TabsContent value="multi-assign" className="space-y-4 mt-6">
+              {items.map((item) => {
+                const claimStatus = getClaimStatus(item);
+                const claimedBy = getClaimedBy(item);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="border rounded-lg p-4"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium">{item.name}</h4>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>Available: {item.remaining_quantity}</span>
+                            <span>•</span>
+                            <span>Price: {formatCurrency(item.price)} each</span>
+                            {item.category && (
+                              <>
+                                <span>•</span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {item.category}
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">
+                            {formatCurrency(item.price * item.quantity)}
+                          </p>
+                          <Badge className={claimStatus.color}>
+                            {claimStatus.status === 'claimed' ? 'Fully Claimed' :
+                             claimStatus.status === 'partial' ? 'Partially Claimed' : 'Unclaimed'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Multi-assign interface */}
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium">Assign to Group Members</Label>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Select which group members should pay for this item
+                          </p>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {groupMembers.map((member) => {
+                              const memberClaim = item.claims?.find(claim => claim.user_id === member.id);
+                              const isClaimed = memberClaim && memberClaim.quantity_claimed > 0;
+                              
+                              return (
+                                <div
+                                  key={member.id}
+                                  className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                                    isClaimed ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage src={member.avatar_url} />
+                                      <AvatarFallback>
+                                        {member.name?.charAt(0) || 'U'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-medium text-sm">{member.name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {isClaimed ? `${memberClaim.quantity_claimed}x claimed` : 'Not claimed'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    {isClaimed ? (
+                                      <div className="text-right">
+                                        <p className="text-sm font-medium">
+                                          {formatCurrency(memberClaim.custom_amount || (memberClaim.quantity_claimed * item.price))}
+                                        </p>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => removeClaim(item.id)}
+                                          disabled={claiming === item.id}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          console.log('🔘 Claim All clicked:', { 
+                                            itemId: item.id, 
+                                            remaining_quantity: item.remaining_quantity 
+                                          });
+                                          handleSimpleClaim(item.id, true);
+                                        }}
+                                        disabled={claiming === item.id || item.remaining_quantity <= 0}
+                                      >
+                                        Claim All
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Current claims summary */}
+                        {claimedBy.length > 0 && (
+                          <div className="pt-3 border-t">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">
+                              Current Claims:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {claimedBy.map((claim, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center gap-2 text-sm bg-muted px-3 py-2 rounded-lg"
+                                >
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={(claim.user as any)?.avatar_url} />
+                                    <AvatarFallback>
+                                      {claim.user.name?.charAt(0) || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium">{claim.user.name}</span>
+                                  <span className="text-muted-foreground">
+                                    {claim.quantity}x
+                                  </span>
+                                  <span className="font-medium">
+                                    {formatCurrency(claim.amount)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

@@ -91,17 +91,17 @@ Return ONLY the JSON object, no explanations or markdown.`;
     };
 
     // Auto-fix total if it doesn't match items
-    const calculatedTotal = result.items.reduce(
-      (sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 1)), 0
-    );
+    // const calculatedTotal = result.items.reduce(
+    //   (sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 1)), 0
+    // );
 
-    if (Math.abs(result.total - calculatedTotal) > 0.01) {
-      console.warn(`Adjusting total from ${result.total} to ${calculatedTotal}`);
-      result.total = calculatedTotal;
-      result.confidence = Math.max(0.3, result.confidence - 0.2);
-    }
+    // if (Math.abs(result.total - calculatedTotal) > 0.01) {
+    //   console.warn(`Adjusting total from ${result.total} to ${calculatedTotal}`);
+    //   result.total = calculatedTotal;
+    //   result.confidence = Math.max(0.3, result.confidence - 0.2);
+    // }
 
-    console.log('Parsed ticket data:', result);
+    // console.log('Parsed ticket data:', result);
     return result;
 
   } catch (error) {
