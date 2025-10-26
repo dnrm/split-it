@@ -65,7 +65,7 @@ function SignupForm() {
       }
 
       if (data.session) {
-        toast.success('Account created! Welcome to SplitSphere!');
+        toast.success('Account created! Welcome to SplitIt!');
         router.push(redirectTo);
         router.refresh();
       } else {
@@ -87,7 +87,7 @@ function SignupForm() {
             Create an account
           </CardTitle>
           <CardDescription>
-            Join SplitSphere to start managing group expenses
+            Join SplitIt to start managing group expenses
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>

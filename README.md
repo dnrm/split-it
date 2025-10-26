@@ -1,4 +1,4 @@
-# SplitSphere
+# SplitIt
 
 An AI-powered expense-sharing application that simplifies group payments through natural language input and automated settlement optimization.
 
@@ -263,4 +263,4 @@ Built for a hackathon using cutting-edge AI and modern web technologies.
 
 ---
 
-For more information, see the [PRD document](./docs/SplitSphere_PRD.md).
+For more information, see the [PRD document](./docs/SplitIt_PRD.md).

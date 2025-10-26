@@ -64,7 +64,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">SplitSphere</span>
+          <span className="text-xl font-bold">SplitIt</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -150,7 +150,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
                 <div className="flex flex-col gap-4 py-4">
                   <div className="flex items-center gap-2 px-2">
                     <Sparkles className="h-6 w-6 text-primary" />
-                    <span className="text-xl font-bold">SplitSphere</span>
+                    <span className="text-xl font-bold">SplitIt</span>
                   </div>
                   <nav className="flex flex-col gap-1">
                     {navItems.map((item) => {

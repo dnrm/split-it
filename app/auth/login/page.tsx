@@ -100,7 +100,7 @@ function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold tracking-tight">
-            Welcome to SplitSphere
+            Welcome to SplitIt
           </CardTitle>
           <CardDescription>
             Sign in to your account to manage group expenses

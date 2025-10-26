@@ -3,9 +3,16 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { appFont, monoFont } from "@/lib/fonts";
+import { Plus_Jakarta_Sans  } from "next/font/google";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
-  title: "SplitSphere - AI-Powered Expense Sharing",
+  title: "SplitIt - AI-Powered Expense Sharing",
   description:
     "Simplify group payments through voice, natural language, and automated settlement optimization.",
 };
@@ -18,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${appFont.variable} ${monoFont.variable} font-sans antialiased`}
+        className={`${plusJakartaSans.variable} font-plus-jakarta-sans antialiased`}
       >
         <ThemeProvider
           attribute="class"

@@ -177,7 +177,7 @@ export function GroupInviteDialog({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Join ${groupName} on SplitSphere`,
+          title: `Join ${groupName} on SplitIt`,
           text: `You've been invited to join ${groupName}. Click the link to join!`,
           url: inviteUrl,
         });

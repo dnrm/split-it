@@ -26,6 +26,7 @@ import {
   Cell,
 } from "recharts";
 import { TrendingUp, Users } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface GroupData {
   id: string;
@@ -75,6 +76,8 @@ export function RecentGroupsCharts({
   groups,
   currency,
 }: RecentGroupsChartsProps) {
+  const isMobile = useIsMobile();
+  
   if (!groups || groups.length === 0) {
     return null;
   }
@@ -117,31 +120,31 @@ export function RecentGroupsCharts({
   });
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid gap-3 sm:gap-6 lg:grid-cols-2 w-full">
       {/* Group Spending Breakdown */}
       <Card className="rounded-none shadow-xs bg-muted">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5" />
             Spending by Recent Groups
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Breakdown of expenses in your most active groups
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {groupSpendingData.length === 0 ? (
-            <div className="flex h-[300px] items-center justify-center text-muted-foreground px-6">
+            <div className={`flex ${isMobile ? 'h-[200px]' : 'h-[250px]'} items-center justify-center text-muted-foreground px-4 sm:px-6`}>
               <div className="text-center">
-                <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No spending data available</p>
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs sm:text-sm">No spending data available</p>
                 <p className="text-xs text-muted-foreground">
                   Add expenses to see breakdown
                 </p>
               </div>
             </div>
           ) : (
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <ChartContainer config={chartConfig} className={`${isMobile ? 'h-[200px]' : 'h-[250px]'} w-full max-w-full overflow-hidden`}>
               <PieChart>
                 <Pie
                   data={groupSpendingData}
@@ -149,8 +152,8 @@ export function RecentGroupsCharts({
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  innerRadius={40}
+                  outerRadius={isMobile ? 50 : 80}
+                  innerRadius={isMobile ? 15 : 30}
                   strokeWidth={2}
                   stroke="hsl(var(--background))"
                 >
@@ -184,34 +187,43 @@ export function RecentGroupsCharts({
 
       {/* Monthly Spending Trend */}
       <Card className="rounded-none shadow-xs bg-muted">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
             Monthly Spending Trend
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             Spending in your recent groups over the last 6 months
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {monthlyData.every((month) => month.amount === 0) ? (
-            <div className="flex h-[300px] items-center justify-center text-muted-foreground px-6">
+            <div className={`flex ${isMobile ? 'h-[200px]' : 'h-[250px]'} items-center justify-center text-muted-foreground px-4 sm:px-6`}>
               <div className="text-center">
-                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No spending data available</p>
+                <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs sm:text-sm">No spending data available</p>
                 <p className="text-xs text-muted-foreground">
                   Add expenses to see trends
                 </p>
               </div>
             </div>
           ) : (
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <BarChart data={monthlyData} margin={{ left: 60, right: 20 }}>
+            <ChartContainer config={chartConfig} className={`${isMobile ? 'h-[200px]' : 'h-[250px]'} w-full max-w-full overflow-hidden`}>
+              <BarChart 
+                data={monthlyData} 
+                margin={isMobile ? { left: 30, right: 5, top: 10, bottom: 10 } : { left: 60, right: 20, top: 10, bottom: 10 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                <XAxis 
+                  dataKey="month" 
+                  tickLine={false} 
+                  axisLine={false}
+                  fontSize={isMobile ? 10 : 12}
+                />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
+                  fontSize={isMobile ? 10 : 12}
                   tickFormatter={(value) =>
                     `${currency}${formatCompactNumber(value)}`
                   }
@@ -229,7 +241,7 @@ export function RecentGroupsCharts({
                   dataKey="amount"
                   fill="var(--color-amount)"
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
+                  maxBarSize={isMobile ? 25 : 40}
                 />
               </BarChart>
             </ChartContainer>

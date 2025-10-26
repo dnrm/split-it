@@ -215,15 +215,13 @@ export function GroupHeader({
 
   return (
     <div className="space-y-4">
-      <Button
-        className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
-        asChild
+      <Link 
+        href="/dashboard/groups"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <Link href="/dashboard/groups">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Groups
-        </Link>
-      </Button>
+        <ArrowLeft className="h-4 w-4" />
+        Back to Groups
+      </Link>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
@@ -250,13 +248,25 @@ export function GroupHeader({
           </div>
         </div>
 
-        <div className="flex gap-2">
-          {isMounted && (
+        {isMounted && (
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <Button
+              className="rounded-xl bg-linear-to-b from-green-600 to-green-700 text-white hover:from-green-500 hover:to-green-600 border border-green-600 shrink-0"
+              asChild
+            >
+              <Link href={`/dashboard/groups/${group.id}/settle`}>
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Settle Transactions</span>
+                <span className="sm:hidden">Settle</span>
+              </Link>
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary">
+                <Button className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary shrink-0">
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Add Member
+                  <span className="hidden sm:inline">Add Member</span>
+                  <span className="sm:hidden">Add</span>
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -277,12 +287,10 @@ export function GroupHeader({
                 />
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
 
-          {isMounted && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-10 w-10 p-0">
+                <Button variant="outline" className="rounded-xl shrink-0">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -311,45 +319,6 @@ export function GroupHeader({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-        </div>
-        {isMounted && (
-          <div className="flex gap-3">
-            <Button
-              className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
-              asChild
-            >
-              <Link href={`/dashboard/groups/${group.id}/settle`}>
-                <ArrowRightLeft className="mr-2 h-4 w-4" />
-                Settle Transactions
-              </Link>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add Member
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsAddMemberOpen(true)}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Add by Email
-                </DropdownMenuItem>
-                <GroupInviteDialog
-                  groupId={group.id}
-                  groupName={group.name}
-                  trigger={
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <LinkIcon className="mr-2 h-4 w-4" />
-                      Create Invite Link
-                    </DropdownMenuItem>
-                  }
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         )}
 
@@ -375,7 +344,7 @@ export function GroupHeader({
                     disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    They must have a SplitSphere account
+                    They must have a SplitIt account
                   </p>
                 </div>
               </div>

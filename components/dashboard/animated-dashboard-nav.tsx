@@ -67,7 +67,7 @@ export function AnimatedDashboardNav({ user }: AnimatedDashboardNavProps) {
         >
           <Link href="/dashboard" className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">SplitSphere</span>
+            <span className="text-xl font-bold">SplitIt</span>
           </Link>
         </motion.div>
 
@@ -170,11 +170,11 @@ export function AnimatedDashboardNav({ user }: AnimatedDashboardNavProps) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="flex items-center gap-2 px-2">
+                    <div className="flex items-center gap-2 px-4">
                       <Sparkles className="h-6 w-6 text-primary" />
-                      <span className="text-xl font-bold">SplitSphere</span>
+                      <span className="text-xl font-bold">SplitIt</span>
                     </div>
-                    <nav className="flex flex-col gap-1">
+                    <nav className="flex flex-col gap-1 px-2">
                       {navItems.map((item, index) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
@@ -189,7 +189,7 @@ export function AnimatedDashboardNav({ user }: AnimatedDashboardNavProps) {
                               href={item.href}
                               onClick={() => setIsOpen(false)}
                               className={cn(
-                                'flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
+                                'flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
                                 isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
                               )}
                             >

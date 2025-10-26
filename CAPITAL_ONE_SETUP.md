@@ -19,7 +19,7 @@ This guide will help you set up the Capital One API integration for the Settle T
 1. Navigate to the [Applications Dashboard](https://developer.capitalone.com/platform-documentation/)
 2. Click "Create New Application"
 3. Fill in the application details:
-   - **Application Name**: SplitSphere (or your preferred name)
+   - **Application Name**: SplitIt (or your preferred name)
    - **Description**: Expense splitting app with automated settlements
    - **APIs**: Select the following APIs:
      - Account Management API
@@ -186,4 +186,4 @@ Before going to production:
 
 ---
 
-For more information about the SplitSphere app, see the [main README](./README.md).
+For more information about the SplitIt app, see the [main README](./README.md).

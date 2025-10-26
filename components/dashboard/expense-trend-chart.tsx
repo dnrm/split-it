@@ -8,6 +8,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ExpenseTrendData {
   date: string;
@@ -32,15 +33,17 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function ExpenseTrendChart({ data, currency }: ExpenseTrendChartProps) {
+  const isMobile = useIsMobile();
+  
   if (!data || data.length === 0) {
     return (
       <Card className="rounded-none shadow-xs">
-        <CardHeader>
-          <CardTitle>Expense Trends</CardTitle>
-          <CardDescription>Your spending over time</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Expense Trends</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Your spending over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[200px] items-center justify-center text-muted-foreground">
+          <div className={`flex ${isMobile ? 'h-[150px]' : 'h-[180px]'} items-center justify-center text-muted-foreground`}>
             No data available
           </div>
         </CardContent>
@@ -50,18 +53,22 @@ export function ExpenseTrendChart({ data, currency }: ExpenseTrendChartProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Expense Trends</CardTitle>
-        <CardDescription>Your spending over the last 7 days</CardDescription>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg">Expense Trends</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Your spending over the last 7 days</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px]">
-          <AreaChart data={data}>
+        <ChartContainer config={chartConfig} className={`${isMobile ? 'h-[150px]' : 'h-[180px]'} w-full max-w-full overflow-hidden`}>
+          <AreaChart 
+            data={data}
+            margin={isMobile ? { left: 40, right: 10, top: 10, bottom: 10 } : { left: 60, right: 20, top: 10, bottom: 10 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="date" 
               tickLine={false}
               axisLine={false}
+              fontSize={isMobile ? 10 : 12}
               tickFormatter={(value) => {
                 const date = new Date(value);
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -70,6 +77,7 @@ export function ExpenseTrendChart({ data, currency }: ExpenseTrendChartProps) {
             <YAxis 
               tickLine={false}
               axisLine={false}
+              fontSize={isMobile ? 10 : 12}
               tickFormatter={(value) => `${currency}${value}`}
             />
             <ChartTooltip

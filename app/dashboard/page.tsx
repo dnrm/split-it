@@ -82,7 +82,7 @@ export default async function DashboardPage() {
   const primaryCurrency = groups?.[0]?.currency || "USD";
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-4 py-6 sm:py-8">
       {/* Header */}
       <AnimatedDashboardHeader userName={user.user_metadata?.name} />
 

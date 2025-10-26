@@ -21,15 +21,279 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Plus, Check, AlertCircle } from "lucide-react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Sparkles, Plus, Check, AlertCircle, Edit3 } from "lucide-react";
 import { GroupMember, ParsedExpense } from "@/types";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AddExpenseFormProps {
   groupId: string;
   members: GroupMember[];
   currentUserId: string;
   currency: string;
+}
+
+// Shared form component for both card and drawer
+function ExpenseFormContent({
+  nlInput,
+  setNlInput,
+  parsedExpense,
+  amount,
+  setAmount,
+  description,
+  setDescription,
+  payerId,
+  setPayerId,
+  selectedParticipants,
+  setSelectedParticipants,
+  category,
+  setCategory,
+  loading,
+  saving,
+  members,
+  currentUserId,
+  currency,
+  onParse,
+  onSave,
+  parseError,
+  showManualForm,
+  onShowManualForm,
+}: {
+  nlInput: string;
+  setNlInput: (value: string) => void;
+  parsedExpense: ParsedExpense | null;
+  amount: string;
+  setAmount: (value: string) => void;
+  description: string;
+  setDescription: (value: string) => void;
+  payerId: string;
+  setPayerId: (value: string) => void;
+  selectedParticipants: string[];
+  setSelectedParticipants: React.Dispatch<React.SetStateAction<string[]>>;
+  category: string;
+  setCategory: (value: string) => void;
+  loading: boolean;
+  saving: boolean;
+  members: GroupMember[];
+  currentUserId: string;
+  currency: string;
+  onParse: () => void;
+  onSave: () => void;
+  parseError: boolean;
+  showManualForm: boolean;
+  onShowManualForm: () => void;
+}) {
+  const handleToggleParticipant = (userId: string) => {
+    setSelectedParticipants((prev: string[]) =>
+      prev.includes(userId)
+        ? prev.filter((id: string) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const isMobile = useIsMobile();
+  const shouldShowForm = parsedExpense || showManualForm || (!isMobile && nlInput === "");
+
+  return (
+    <div className="space-y-6">
+      {/* Natural Language Input */}
+      <div className="space-y-3">
+        <Label htmlFor="nl-input">Describe the expense</Label>
+        <div className="flex gap-2">
+          <Textarea
+            id="nl-input"
+            placeholder='e.g., "I paid $45 for dinner for everyone" or "Dani paid $60 for gas for Andrea and Richy"'
+            value={nlInput}
+            onChange={(e) => setNlInput(e.target.value)}
+            disabled={loading || saving}
+            className="min-h-[80px]"
+          />
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            onClick={onParse}
+            disabled={loading || saving || !nlInput.trim()}
+            className="w-full sm:w-auto rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            {loading ? "Parsing..." : "Parse with AI"}
+          </Button>
+          {parseError && (
+            <Button
+              onClick={onShowManualForm}
+              variant="outline"
+              className="w-full sm:w-auto rounded-xl"
+            >
+              <Edit3 className="mr-2 h-4 w-4" />
+              Enter Manually
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Parsed Result / Manual Entry */}
+      {shouldShowForm && (
+        <div className="space-y-4 rounded-lg border p-4">
+          {parsedExpense && (
+            <div className="mb-4 flex items-center gap-2">
+              {parsedExpense.confidence >= 0.7 ? (
+                <>
+                  <Check className="h-4 w-4 text-chart-5" />
+                  <span className="text-sm font-medium text-chart-5">
+                    High confidence
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-chart-4" />
+                  <span className="text-sm font-medium text-chart-4">
+                    Please review carefully
+                  </span>
+                </>
+              )}
+              <Badge variant="outline" className="ml-auto">
+                {Math.round(parsedExpense.confidence * 100)}% confident
+              </Badge>
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount ({currency})</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                disabled={saving}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payer">Paid by</Label>
+              <Select
+                value={payerId}
+                onValueChange={setPayerId}
+                disabled={saving}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select payer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((member) => {
+                    console.log("Rendering member in dropdown:", {
+                      user_id: member.user_id,
+                      user_name: member.user?.name,
+                      display_name: member.user?.name || "Unknown User",
+                      is_current_user: member.user_id === currentUserId,
+                    });
+                    return (
+                      <SelectItem key={member.user_id} value={member.user_id}>
+                        {member.user?.name || "Unknown User"}
+                        {member.user_id === currentUserId && " (You)"}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              placeholder="What was this expense for?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={saving}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={category}
+              onValueChange={setCategory}
+              disabled={saving}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="food">Food</SelectItem>
+                <SelectItem value="transport">Transport</SelectItem>
+                <SelectItem value="accommodation">Accommodation</SelectItem>
+                <SelectItem value="entertainment">Entertainment</SelectItem>
+                <SelectItem value="utilities">Utilities</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Split between</Label>
+            <div className="flex flex-wrap gap-2">
+              {members.map((member) => {
+                console.log("Rendering member in pills:", {
+                  user_id: member.user_id,
+                  user_name: member.user?.name,
+                  display_name: member.user?.name || "Unknown User",
+                  is_current_user: member.user_id === currentUserId,
+                });
+                return (
+                  <Badge
+                    key={member.user_id}
+                    variant={
+                      selectedParticipants.includes(member.user_id)
+                        ? "default"
+                        : "outline"
+                    }
+                    className="cursor-pointer"
+                    onClick={() =>
+                      !saving && handleToggleParticipant(member.user_id)
+                    }
+                  >
+                    {member.user?.name || "Unknown User"}
+                    {member.user_id === currentUserId && " (You)"}
+                  </Badge>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Click to select who should split this expense
+            </p>
+          </div>
+
+          <Button
+            onClick={onSave}
+            disabled={
+              saving ||
+              !amount ||
+              !payerId ||
+              selectedParticipants.length === 0
+            }
+            className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+          >
+            {saving ? "Saving..." : "Save Expense"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AddExpenseForm({
@@ -50,6 +314,9 @@ export function AddExpenseForm({
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [parseError, setParseError] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   // Editable fields after parsing
   const [amount, setAmount] = useState("");
@@ -67,6 +334,7 @@ export function AddExpenseForm({
     }
 
     setLoading(true);
+    setParseError(false);
     try {
       const memberNames = members.map((m) => m.user?.name || "");
 
@@ -106,7 +374,8 @@ export function AddExpenseForm({
       toast.success("Expense parsed! Review and confirm below.");
     } catch (error) {
       console.error("Parse error:", error);
-      toast.error("Failed to parse expense. Try being more specific.");
+      setParseError(true);
+      toast.error("Failed to parse expense. Try being more specific or enter manually.");
     } finally {
       setLoading(false);
     }
@@ -159,6 +428,9 @@ export function AddExpenseForm({
       setSelectedParticipants([]);
       setCategory("");
 
+      // Close drawer on mobile
+      setDrawerOpen(false);
+
       router.refresh();
     } catch (error) {
       console.error("Save error:", error);
@@ -170,202 +442,119 @@ export function AddExpenseForm({
     }
   };
 
-  const handleToggleParticipant = (userId: string) => {
-    setSelectedParticipants((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
+  const handleShowManualForm = () => {
+    setShowManualForm(true);
+    setParseError(false);
+  };
+
+  const resetForm = () => {
+    setNlInput("");
+    setParsedExpense(null);
+    setAmount("");
+    setDescription("");
+    setPayerId("");
+    setSelectedParticipants([]);
+    setCategory("");
+    setParseError(false);
+    setShowManualForm(false);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
-          Add Expense
-        </CardTitle>
-        <CardDescription>
-          Describe the expense naturally, and AI will parse it for you
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Natural Language Input */}
-        <div className="space-y-3">
-          <Label htmlFor="nl-input">Describe the expense</Label>
-          <div className="flex gap-2">
-            <Textarea
-              id="nl-input"
-              placeholder='e.g., "I paid $45 for dinner for everyone" or "Dani paid $60 for gas for Andrea and Richy"'
-              value={nlInput}
-              onChange={(e) => setNlInput(e.target.value)}
-              disabled={loading || saving}
-              className="min-h-[80px]"
+    <>
+      {/* Desktop Card Layout */}
+      <div className="hidden md:block">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add Expense
+            </CardTitle>
+            <CardDescription>
+              Describe the expense naturally, and AI will parse it for you
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ExpenseFormContent
+              nlInput={nlInput}
+              setNlInput={setNlInput}
+              parsedExpense={parsedExpense}
+              amount={amount}
+              setAmount={setAmount}
+              description={description}
+              setDescription={setDescription}
+              payerId={payerId}
+              setPayerId={setPayerId}
+              selectedParticipants={selectedParticipants}
+              setSelectedParticipants={setSelectedParticipants}
+              category={category}
+              setCategory={setCategory}
+              loading={loading}
+              saving={saving}
+              members={members}
+              currentUserId={currentUserId}
+              currency={currency}
+              onParse={handleParse}
+              onSave={handleSave}
+              parseError={parseError}
+              showManualForm={showManualForm}
+              onShowManualForm={handleShowManualForm}
             />
-          </div>
-          <Button
-            onClick={handleParse}
-            disabled={loading || saving || !nlInput.trim()}
-            className="w-full sm:w-auto rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {loading ? "Parsing..." : "Parse with AI"}
-          </Button>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Parsed Result / Manual Entry */}
-        {(parsedExpense || nlInput === "") && (
-          <div className="space-y-4 rounded-lg border p-4">
-            {parsedExpense && (
-              <div className="mb-4 flex items-center gap-2">
-                {parsedExpense.confidence >= 0.7 ? (
-                  <>
-                    <Check className="h-4 w-4 text-chart-5" />
-                    <span className="text-sm font-medium text-chart-5">
-                      High confidence
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="h-4 w-4 text-chart-4" />
-                    <span className="text-sm font-medium text-chart-4">
-                      Please review carefully
-                    </span>
-                  </>
-                )}
-                <Badge variant="outline" className="ml-auto">
-                  {Math.round(parsedExpense.confidence * 100)}% confident
-                </Badge>
-              </div>
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount ({currency})</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  disabled={saving}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="payer">Paid by</Label>
-                <Select
-                  value={payerId}
-                  onValueChange={setPayerId}
-                  disabled={saving}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map((member) => {
-                      console.log("Rendering member in dropdown:", {
-                        user_id: member.user_id,
-                        user_name: member.user?.name,
-                        display_name: member.user?.name || "Unknown User",
-                        is_current_user: member.user_id === currentUserId,
-                      });
-                      return (
-                        <SelectItem key={member.user_id} value={member.user_id}>
-                          {member.user?.name || "Unknown User"}
-                          {member.user_id === currentUserId && " (You)"}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                placeholder="What was this expense for?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={saving}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={category}
-                onValueChange={setCategory}
-                disabled={saving}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="food">Food</SelectItem>
-                  <SelectItem value="transport">Transport</SelectItem>
-                  <SelectItem value="accommodation">Accommodation</SelectItem>
-                  <SelectItem value="entertainment">Entertainment</SelectItem>
-                  <SelectItem value="utilities">Utilities</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Split between</Label>
-              <div className="flex flex-wrap gap-2">
-                {members.map((member) => {
-                  console.log("Rendering member in pills:", {
-                    user_id: member.user_id,
-                    user_name: member.user?.name,
-                    display_name: member.user?.name || "Unknown User",
-                    is_current_user: member.user_id === currentUserId,
-                  });
-                  return (
-                    <Badge
-                      key={member.user_id}
-                      variant={
-                        selectedParticipants.includes(member.user_id)
-                          ? "default"
-                          : "outline"
-                      }
-                      className="cursor-pointer"
-                      onClick={() =>
-                        !saving && handleToggleParticipant(member.user_id)
-                      }
-                    >
-                      {member.user?.name || "Unknown User"}
-                      {member.user_id === currentUserId && " (You)"}
-                    </Badge>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Click to select who should split this expense
-              </p>
-            </div>
-
+      {/* Mobile Drawer Layout */}
+      <div className="md:hidden">
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerTrigger asChild>
             <Button
-              onClick={handleSave}
-              disabled={
-                saving ||
-                !amount ||
-                !payerId ||
-                selectedParticipants.length === 0
-              }
+              size="lg"
               className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
             >
-              {saving ? "Saving..." : "Save Expense"}
+              <Plus className="mr-2 h-5 w-5" />
+              Add Expense
             </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Add Expense
+              </DrawerTitle>
+              <DrawerDescription>
+                Describe the expense naturally, and AI will parse it for you
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-16 overflow-y-auto">
+              <ExpenseFormContent
+                nlInput={nlInput}
+                setNlInput={setNlInput}
+                parsedExpense={parsedExpense}
+                amount={amount}
+                setAmount={setAmount}
+                description={description}
+                setDescription={setDescription}
+                payerId={payerId}
+                setPayerId={setPayerId}
+                selectedParticipants={selectedParticipants}
+                setSelectedParticipants={setSelectedParticipants}
+                category={category}
+                setCategory={setCategory}
+                loading={loading}
+                saving={saving}
+                members={members}
+                currentUserId={currentUserId}
+                currency={currency}
+                onParse={handleParse}
+                onSave={handleSave}
+                parseError={parseError}
+                showManualForm={showManualForm}
+                onShowManualForm={handleShowManualForm}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </div>
+    </>
   );
 }

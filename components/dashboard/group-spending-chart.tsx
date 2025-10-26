@@ -10,6 +10,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { PieChart, Pie, Cell } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GroupSpendingData {
   name: string;
@@ -37,15 +38,17 @@ const COLORS = [
 ];
 
 export function GroupSpendingChart({ data, currency }: GroupSpendingChartProps) {
+  const isMobile = useIsMobile();
+  
   if (!data || data.length === 0) {
     return (
       <Card className="rounded-none shadow-xs">
-        <CardHeader>
-          <CardTitle>Spending by Group</CardTitle>
-          <CardDescription>Breakdown of expenses by group</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Spending by Group</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Breakdown of expenses by group</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[200px] items-center justify-center text-muted-foreground">
+          <div className={`flex ${isMobile ? 'h-[150px]' : 'h-[180px]'} items-center justify-center text-muted-foreground`}>
             No data available
           </div>
         </CardContent>
@@ -60,12 +63,12 @@ export function GroupSpendingChart({ data, currency }: GroupSpendingChartProps) 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Spending by Group</CardTitle>
-        <CardDescription>Breakdown of expenses by group</CardDescription>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg">Spending by Group</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Breakdown of expenses by group</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px]">
+        <ChartContainer config={chartConfig} className={`${isMobile ? 'h-[150px]' : 'h-[180px]'} w-full max-w-full overflow-hidden`}>
           <PieChart>
             <Pie
               data={chartData}
@@ -73,8 +76,8 @@ export function GroupSpendingChart({ data, currency }: GroupSpendingChartProps) 
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={60}
-              innerRadius={20}
+              outerRadius={isMobile ? 35 : 50}
+              innerRadius={isMobile ? 10 : 15}
               strokeWidth={2}
             >
               {chartData.map((entry, index) => (
