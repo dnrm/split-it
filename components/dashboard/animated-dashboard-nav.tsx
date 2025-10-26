@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Sparkles, Home, Users, Receipt, Menu, LogOut } from 'lucide-react';
+import { Sparkles, Home, Users, Receipt, Tickets, Menu, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -29,6 +29,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/groups', label: 'Groups', icon: Users },
   { href: '/dashboard/expenses', label: 'Expenses', icon: Receipt },
+  { href: '/dashboard/tickets', label: 'Tickets', icon: Tickets },
 ];
 
 export function AnimatedDashboardNav({ user }: AnimatedDashboardNavProps) {

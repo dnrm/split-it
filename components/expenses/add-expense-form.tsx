@@ -30,10 +30,12 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Sparkles, Plus, Check, AlertCircle, Edit3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sparkles, Plus, Check, AlertCircle, Edit3, Upload, MessageSquare } from "lucide-react";
 import { GroupMember, ParsedExpense } from "@/types";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TicketUpload } from '@/components/tickets/ticket-upload';
 
 interface AddExpenseFormProps {
   groupId: string;
@@ -459,6 +461,10 @@ export function AddExpenseForm({
     setShowManualForm(false);
   };
 
+  const handleTicketUploadComplete = (ticketId: string) => {
+    router.push(`/dashboard/tickets/${ticketId}`);
+  };
+
   return (
     <>
       {/* Desktop Card Layout */}
@@ -470,35 +476,57 @@ export function AddExpenseForm({
               Add Expense
             </CardTitle>
             <CardDescription>
-              Describe the expense naturally, and AI will parse it for you
+              Add expenses using natural language or upload a receipt
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ExpenseFormContent
-              nlInput={nlInput}
-              setNlInput={setNlInput}
-              parsedExpense={parsedExpense}
-              amount={amount}
-              setAmount={setAmount}
-              description={description}
-              setDescription={setDescription}
-              payerId={payerId}
-              setPayerId={setPayerId}
-              selectedParticipants={selectedParticipants}
-              setSelectedParticipants={setSelectedParticipants}
-              category={category}
-              setCategory={setCategory}
-              loading={loading}
-              saving={saving}
-              members={members}
-              currentUserId={currentUserId}
-              currency={currency}
-              onParse={handleParse}
-              onSave={handleSave}
-              parseError={parseError}
-              showManualForm={showManualForm}
-              onShowManualForm={handleShowManualForm}
-            />
+          <CardContent className="space-y-6">
+            <Tabs defaultValue="text" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="text" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Text Input
+                </TabsTrigger>
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Receipt
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="text" className="space-y-6">
+                <ExpenseFormContent
+                  nlInput={nlInput}
+                  setNlInput={setNlInput}
+                  parsedExpense={parsedExpense}
+                  amount={amount}
+                  setAmount={setAmount}
+                  description={description}
+                  setDescription={setDescription}
+                  payerId={payerId}
+                  setPayerId={setPayerId}
+                  selectedParticipants={selectedParticipants}
+                  setSelectedParticipants={setSelectedParticipants}
+                  category={category}
+                  setCategory={setCategory}
+                  loading={loading}
+                  saving={saving}
+                  members={members}
+                  currentUserId={currentUserId}
+                  currency={currency}
+                  onParse={handleParse}
+                  onSave={handleSave}
+                  parseError={parseError}
+                  showManualForm={showManualForm}
+                  onShowManualForm={handleShowManualForm}
+                />
+              </TabsContent>
+              
+              <TabsContent value="upload" className="space-y-6">
+                <TicketUpload
+                  groupId={groupId}
+                  onUploadComplete={handleTicketUploadComplete}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
@@ -522,35 +550,57 @@ export function AddExpenseForm({
                 Add Expense
               </DrawerTitle>
               <DrawerDescription>
-                Describe the expense naturally, and AI will parse it for you
+                Add expenses using natural language or upload a receipt
               </DrawerDescription>
             </DrawerHeader>
             <div className="px-4 pb-16 overflow-y-auto">
-              <ExpenseFormContent
-                nlInput={nlInput}
-                setNlInput={setNlInput}
-                parsedExpense={parsedExpense}
-                amount={amount}
-                setAmount={setAmount}
-                description={description}
-                setDescription={setDescription}
-                payerId={payerId}
-                setPayerId={setPayerId}
-                selectedParticipants={selectedParticipants}
-                setSelectedParticipants={setSelectedParticipants}
-                category={category}
-                setCategory={setCategory}
-                loading={loading}
-                saving={saving}
-                members={members}
-                currentUserId={currentUserId}
-                currency={currency}
-                onParse={handleParse}
-                onSave={handleSave}
-                parseError={parseError}
-                showManualForm={showManualForm}
-                onShowManualForm={handleShowManualForm}
-              />
+              <Tabs defaultValue="text" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="text" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Text Input
+                  </TabsTrigger>
+                  <TabsTrigger value="upload" className="flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload Receipt
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="text" className="space-y-6">
+                  <ExpenseFormContent
+                    nlInput={nlInput}
+                    setNlInput={setNlInput}
+                    parsedExpense={parsedExpense}
+                    amount={amount}
+                    setAmount={setAmount}
+                    description={description}
+                    setDescription={setDescription}
+                    payerId={payerId}
+                    setPayerId={setPayerId}
+                    selectedParticipants={selectedParticipants}
+                    setSelectedParticipants={setSelectedParticipants}
+                    category={category}
+                    setCategory={setCategory}
+                    loading={loading}
+                    saving={saving}
+                    members={members}
+                    currentUserId={currentUserId}
+                    currency={currency}
+                    onParse={handleParse}
+                    onSave={handleSave}
+                    parseError={parseError}
+                    showManualForm={showManualForm}
+                    onShowManualForm={handleShowManualForm}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="upload" className="space-y-6">
+                  <TicketUpload
+                    groupId={groupId}
+                    onUploadComplete={handleTicketUploadComplete}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </DrawerContent>
         </Drawer>
