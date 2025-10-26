@@ -178,7 +178,7 @@ export function GroupInviteDialog({
       try {
         await navigator.share({
           title: `Join ${groupName} on SplitIt`,
-          text: `You've been invited to join ${groupName}. Click the link to join!`,
+          text: `You've been invited to join ${groupName} on SplitIt! Visit https://split-it.tech/ to join our AI-powered expense sharing platform. Click the link to join!`,
           url: inviteUrl,
         });
         toast.success('Invitation shared!');

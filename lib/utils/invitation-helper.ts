@@ -69,7 +69,7 @@ export function validateInvitation(invitation: {
  * Format invitation URL
  */
 export function formatInvitationUrl(code: string, baseUrl?: string): string {
-  const base = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+  const base = baseUrl || 'https://split-it.tech';
   return `${base}/invite/${code}`;
 }
 
