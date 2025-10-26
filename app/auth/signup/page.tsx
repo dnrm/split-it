@@ -139,7 +139,7 @@ function SignupForm() {
           <CardFooter className="flex flex-col space-y-3">
             <Button
               type="submit"
-              className="w-full"
+              className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
               disabled={loading}
             >
               {loading ? 'Creating account...' : 'Create Account'}

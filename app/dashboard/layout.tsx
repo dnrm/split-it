@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { DashboardNav } from '@/components/dashboard/dashboard-nav';
+import { AnimatedDashboardNav } from '@/components/dashboard/animated-dashboard-nav';
+import { PageTransition } from '@/components/ui/page-transition';
 
 export default async function DashboardLayout({
   children,
@@ -19,9 +20,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardNav user={user} />
+      <AnimatedDashboardNav user={user} />
       <main className="flex-1 bg-background">
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </main>
     </div>
   );

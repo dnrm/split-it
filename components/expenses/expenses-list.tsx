@@ -156,7 +156,7 @@ export function ExpensesList({ expenses, currentUserId, currency }: ExpensesList
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        variant="ghost"
+                        className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
                         size="icon"
                         disabled={deletingId === expense.id}
                       >

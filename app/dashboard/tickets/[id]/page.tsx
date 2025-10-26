@@ -6,19 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
 import { 
   ArrowLeft, 
   CheckCircle, 
   AlertCircle, 
-  Users, 
-  DollarSign,
-  Loader2
+  Clock,
+  RefreshCw,
+  Users
 } from 'lucide-react';
 import { TicketViewer } from '@/components/tickets/ticket-viewer';
 import { TicketClaiming } from '@/components/tickets/ticket-claiming';
 import { FinalizeTicketDialog } from '@/components/tickets/finalize-ticket-dialog';
-import { SharedTicket, TicketFinalizationSummary, GroupMember } from '@/types';
+import { SharedTicket, TicketItemWithClaims, User } from '@/types';
 import { toast } from 'sonner';
 
 export default function TicketDetailPage() {
@@ -27,68 +26,85 @@ export default function TicketDetailPage() {
   const ticketId = params.id as string;
 
   const [ticket, setTicket] = useState<SharedTicket | null>(null);
-  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [items, setItems] = useState<TicketItemWithClaims[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
-  const [finalizationSummary, setFinalizationSummary] = useState<TicketFinalizationSummary | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchTicketData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       // Fetch ticket details
       const ticketResponse = await fetch(`/api/tickets/${ticketId}`);
       if (!ticketResponse.ok) {
-        throw new Error('Failed to fetch ticket');
+        const errorData = await ticketResponse.json();
+        console.error('Ticket fetch error:', errorData);
+        throw new Error(`Failed to fetch ticket: ${errorData.error || 'Unknown error'}`);
       }
       const ticketData = await ticketResponse.json();
       setTicket(ticketData.ticket);
 
-      // Fetch group members
-      const membersResponse = await fetch(`/api/groups/${ticketData.ticket.group_id}/members`);
-      if (membersResponse.ok) {
-        const membersData = await membersResponse.json();
-        setGroupMembers(membersData.members || []);
+      // Fetch ticket items
+      const itemsResponse = await fetch(`/api/tickets/${ticketId}/items`);
+      if (!itemsResponse.ok) {
+        const errorData = await itemsResponse.json();
+        console.error('Items fetch error:', errorData);
+        throw new Error(`Failed to fetch items: ${errorData.error || 'Unknown error'}`);
       }
+      const itemsData = await itemsResponse.json();
+      setItems(itemsData.items);
 
-      // Get current user ID (you might need to implement this differently)
+      // Fetch current user
       const userResponse = await fetch('/api/auth/user');
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        setCurrentUserId(userData.user?.id || '');
+        setCurrentUser(userData.user);
       }
 
-    } catch (err) {
-      console.error('Error fetching ticket data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load ticket');
+    } catch (error) {
+      console.error('Error fetching ticket data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load ticket data';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFinalize = async () => {
+  const refreshData = async () => {
+    setRefreshing(true);
+    await fetchTicketData();
+    setRefreshing(false);
+  };
+
+  const handleRetryParse = async () => {
+    if (!ticket) return;
+
+    setRefreshing(true);
     try {
-      // Get finalization summary
-      const response = await fetch(`/api/tickets/${ticketId}/finalize-summary`);
+      const response = await fetch('/api/tickets/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId: ticket.id }),
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to get finalization summary');
+        const error = await response.json();
+        throw new Error(error.error || 'Parsing failed');
       }
-      const data = await response.json();
-      setFinalizationSummary(data.summary);
-      setShowFinalizeDialog(true);
-    } catch (err) {
-      console.error('Error getting finalization summary:', err);
-      toast.error('Failed to get finalization summary');
+
+      toast.success('Ticket parsing retried successfully');
+      await fetchTicketData();
+    } catch (error) {
+      console.error('Error retrying parse:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to retry parsing');
+    } finally {
+      setRefreshing(false);
     }
   };
 
   const handleFinalized = () => {
-    // Refresh ticket data
+    // Refresh data to show updated status
     fetchTicketData();
-    toast.success('Ticket finalized successfully!');
+    toast.success('Ticket finalized! Expenses have been created.');
   };
 
   useEffect(() => {
@@ -97,28 +113,26 @@ export default function TicketDetailPage() {
     }
   }, [ticketId]);
 
+  // Auto-refresh if ticket is processing
+  useEffect(() => {
+    if (ticket?.status === 'processing') {
+      const interval = setInterval(() => {
+        refreshData();
+      }, 3000); // Check every 3 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [ticket?.status]);
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-8 w-8" />
-            <Skeleton className="h-8 w-48" />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading ticket...</p>
           </div>
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
       </div>
     );
   }
@@ -126,13 +140,23 @@ export default function TicketDetailPage() {
   if (!ticket) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Ticket not found</AlertDescription>
-        </Alert>
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Ticket Not Found</h1>
+          <p className="text-muted-foreground mb-4">
+            The ticket you're looking for doesn't exist or you don't have access to it.
+          </p>
+          <Button onClick={() => router.push('/dashboard/tickets')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tickets
+          </Button>
+        </div>
       </div>
     );
   }
+
+  const canFinalize = ticket.status === 'ready' && currentUser;
+  const hasUnclaimedItems = items.some(item => item.remaining_quantity > 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -142,9 +166,9 @@ export default function TicketDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.back()}
+            onClick={() => router.push('/dashboard/tickets')}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
           <div>
@@ -154,98 +178,131 @@ export default function TicketDetailPage() {
             </p>
           </div>
         </div>
+        
         <div className="flex items-center gap-2">
-          {ticket.status === 'ready' && (
-            <Button onClick={handleFinalize}>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Finalize
-            </Button>
-          )}
-          {ticket.status === 'finalized' && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Finalized
-            </Badge>
-          )}
+          <Badge 
+            className={
+              ticket.status === 'ready' ? 'bg-green-100 text-green-800' :
+              ticket.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+              ticket.status === 'error' ? 'bg-red-100 text-red-800' :
+              'bg-blue-100 text-blue-800'
+            }
+          >
+            {ticket.status === 'processing' && <Clock className="mr-1 h-3 w-3" />}
+            {ticket.status === 'ready' && <CheckCircle className="mr-1 h-3 w-3" />}
+            {ticket.status === 'error' && <AlertCircle className="mr-1 h-3 w-3" />}
+            {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+          </Badge>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshData}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Status Messages */}
+      {ticket.status === 'processing' && (
+        <Alert className="mb-6">
+          <Clock className="h-4 w-4" />
+          <AlertDescription>
+            Processing receipt... This may take a few moments. The page will update automatically.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {ticket.status === 'error' && (
+        <Alert className="mb-6" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to parse receipt. Please try uploading a clearer image.
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryParse}
+              className="ml-2"
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Main Content */}
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Ticket Viewer */}
-        <div className="space-y-6">
-          <TicketViewer ticketId={ticketId} />
+        <div>
+          <TicketViewer
+            ticket={ticket}
+            onRetry={handleRetryParse}
+          />
         </div>
 
         {/* Claiming Interface */}
-        <div className="space-y-6">
-          {ticket.status === 'ready' ? (
+        {ticket.status === 'ready' && currentUser && (
+          <div>
             <TicketClaiming
               ticketId={ticketId}
-              currentUserId={currentUserId}
-              groupMembers={groupMembers}
-              onClaimsUpdate={fetchTicketData}
+              items={items}
+              currentUser={currentUser}
+              onClaimUpdate={refreshData}
             />
-          ) : ticket.status === 'processing' ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <div>
-                    <p className="font-medium">Processing receipt...</p>
-                    <p className="text-sm text-muted-foreground">
-                      AI is analyzing the image to extract items and prices
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : ticket.status === 'error' ? (
-            <Card>
-              <CardContent className="pt-6">
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Failed to process receipt. The image might be unclear or in an unsupported format.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          ) : ticket.status === 'finalized' ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  Ticket Finalized
-                </CardTitle>
-                <CardDescription>
-                  This ticket has been finalized and expenses have been created
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>Expenses created for group members</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>Check the expenses page to see the breakdown</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Finalize Dialog */}
-      <FinalizeTicketDialog
-        open={showFinalizeDialog}
-        onOpenChange={setShowFinalizeDialog}
-        ticketId={ticketId}
-        summary={finalizationSummary}
-        onFinalized={handleFinalized}
-      />
+      {/* Finalize Section */}
+      {canFinalize && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Ready to Finalize?
+            </CardTitle>
+            <CardDescription>
+              {hasUnclaimedItems 
+                ? 'Some items are still unclaimed. You can finalize now or wait for more claims.'
+                : 'All items have been claimed. Ready to create individual expenses.'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {items.length} total items • {items.filter(item => item.is_fully_claimed).length} fully claimed
+              </div>
+              <FinalizeTicketDialog
+                ticketId={ticketId}
+                onFinalized={handleFinalized}
+              >
+                <Button>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Finalize Ticket
+                </Button>
+              </FinalizeTicketDialog>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Finalized State */}
+      {ticket.status === 'finalized' && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="h-5 w-5" />
+              Ticket Finalized
+            </CardTitle>
+            <CardDescription>
+              This ticket has been finalized and individual expenses have been created for each person.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }

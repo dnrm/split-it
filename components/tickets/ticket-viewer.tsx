@@ -1,83 +1,59 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 import { 
-  Image as ImageIcon, 
   Store, 
+  Calendar, 
+  User, 
   DollarSign, 
-  Clock, 
   AlertCircle, 
   CheckCircle, 
-  RefreshCw,
-  ExternalLink
+  Clock,
+  RefreshCw
 } from 'lucide-react';
-import { SharedTicket, TicketItem, TicketStatus } from '@/types';
-import { toast } from 'sonner';
+import { SharedTicket, TicketItem } from '@/types';
+import { format } from 'date-fns';
 
 interface TicketViewerProps {
-  ticketId: string;
-  showImage?: boolean;
+  ticket: SharedTicket;
+  onRetry?: () => void;
   className?: string;
 }
 
-export function TicketViewer({ ticketId, showImage = true, className }: TicketViewerProps) {
-  const [ticket, setTicket] = useState<SharedTicket | null>(null);
-  const [items, setItems] = useState<TicketItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function TicketViewer({ ticket, onRetry, className }: TicketViewerProps) {
+  const [imageError, setImageError] = useState(false);
 
-  const fetchTicketData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch ticket details
-      const ticketResponse = await fetch(`/api/tickets/${ticketId}`);
-      if (!ticketResponse.ok) {
-        throw new Error('Failed to fetch ticket');
-      }
-      const ticketData = await ticketResponse.json();
-      setTicket(ticketData.ticket);
-
-      // If ticket is ready, fetch items
-      if (ticketData.ticket.status === 'ready') {
-        const itemsResponse = await fetch(`/api/tickets/${ticketId}/items`);
-        if (itemsResponse.ok) {
-          const itemsData = await itemsResponse.json();
-          setItems(itemsData.items || []);
-        }
-      }
-
-    } catch (err) {
-      console.error('Error fetching ticket data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load ticket');
-    } finally {
-      setLoading(false);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'processing':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'ready':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'finalized':
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  useEffect(() => {
-    fetchTicketData();
-  }, [ticketId]);
-
-  const getStatusBadge = (status: TicketStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'processing':
-        return <Badge variant="secondary" className="flex items-center gap-1"><RefreshCw className="h-3 w-3 animate-spin" />Processing</Badge>;
+        return 'bg-yellow-100 text-yellow-800';
       case 'ready':
-        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />Ready</Badge>;
-      case 'finalized':
-        return <Badge variant="outline" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />Finalized</Badge>;
+        return 'bg-green-100 text-green-800';
       case 'error':
-        return <Badge variant="destructive" className="flex items-center gap-1"><AlertCircle className="h-3 w-3" />Error</Badge>;
+        return 'bg-red-100 text-red-800';
+      case 'finalized':
+        return 'bg-blue-100 text-blue-800';
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -88,235 +64,196 @@ export function TicketViewer({ ticketId, showImage = true, className }: TicketVi
     }).format(amount);
   };
 
-  if (loading) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-32" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className={className}>
-        <CardContent className="pt-6">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="ml-2"
-                onClick={fetchTicketData}
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!ticket) {
-    return (
-      <Card className={className}>
-        <CardContent className="pt-6">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Ticket not found</AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy \'at\' h:mm a');
+    } catch {
+      return 'Invalid date';
+    }
+  };
 
   return (
     <div className={className}>
       {/* Ticket Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Store className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">
-                  {ticket.merchant_name || 'Unknown Merchant'}
-                </CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  <Clock className="h-3 w-3" />
-                  {new Date(ticket.created_at).toLocaleDateString()}
-                </CardDescription>
-              </div>
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <CardTitle className="flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                {ticket.merchant_name || 'Unknown Merchant'}
+              </CardTitle>
+              <CardDescription className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {formatDate(ticket.created_at)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  Unknown User
+                </span>
+              </CardDescription>
             </div>
-            {getStatusBadge(ticket.status)}
+            <div className="flex items-center gap-2">
+              {getStatusIcon(ticket.status)}
+              <Badge className={getStatusColor(ticket.status)}>
+                {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total:</span>
-              <span className="font-medium">
-                {ticket.total_amount ? formatCurrency(ticket.total_amount) : 'N/A'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Items:</span>
-              <span className="font-medium">{items.length}</span>
+        <CardContent className="space-y-4">
+          {/* Ticket Image */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Receipt Image</h4>
+            <div className="relative border rounded-lg overflow-hidden bg-muted">
+              {imageError ? (
+                <div className="flex items-center justify-center h-48 text-muted-foreground">
+                  <div className="text-center">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                    <p className="text-sm">Failed to load image</p>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={ticket.image_url}
+                  alt="Receipt"
+                  className="w-full h-auto max-h-96 object-contain"
+                  onError={() => setImageError(true)}
+                />
+              )}
             </div>
           </div>
+
+          {/* Ticket Summary */}
+          {ticket.status === 'ready' && (
+            <div className="space-y-3">
+              <Separator />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                  <p className="text-2xl font-bold flex items-center gap-1">
+                    <DollarSign className="h-5 w-5" />
+                    {formatCurrency(ticket.total_amount || 0)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Items Found</p>
+                  <p className="text-2xl font-bold">
+                    {ticket.items?.length || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {ticket.status === 'error' && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-red-800">
+                    Failed to parse receipt
+                  </p>
+                  <p className="text-sm text-red-600">
+                    The receipt could not be processed. Please try uploading a clearer image.
+                  </p>
+                  {ticket.parsed_data?.error && (
+                    <p className="text-xs text-red-500 font-mono">
+                      {ticket.parsed_data.error}
+                    </p>
+                  )}
+                  {onRetry && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onRetry}
+                      className="mt-2"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Try Again
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Processing State */}
+          {ticket.status === 'processing' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-yellow-500" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">
+                    Processing receipt...
+                  </p>
+                  <p className="text-sm text-yellow-600">
+                    This may take a few moments. The page will update automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Parsed Items */}
+          {ticket.status === 'ready' && ticket.items && ticket.items.length > 0 && (
+            <div className="space-y-3">
+              <Separator />
+              <div>
+                <h4 className="text-sm font-medium mb-3">Parsed Items</h4>
+                <div className="space-y-2">
+                  {ticket.items.map((item: TicketItem, index: number) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Qty: {item.quantity}</span>
+                          {item.category && (
+                            <>
+                              <span>•</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {item.category}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          {formatCurrency(item.price * item.quantity)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatCurrency(item.price)} each
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Parsed Data Debug (only in development) */}
+          {process.env.NODE_ENV === 'development' && ticket.parsed_data && (
+            <div className="space-y-2">
+              <Separator />
+              <details className="text-xs">
+                <summary className="cursor-pointer font-medium text-muted-foreground">
+                  Debug: Parsed Data
+                </summary>
+                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
+                  {JSON.stringify(ticket.parsed_data, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Ticket Image */}
-      {showImage && ticket.image_url && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-base">Receipt Image</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <img
-                src={ticket.image_url}
-                alt="Receipt"
-                className="w-full max-w-md mx-auto rounded-lg border"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => window.open(ticket.image_url, '_blank')}
-              >
-                <ExternalLink className="h-3 w-3 mr-1" />
-                Open
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Items List */}
-      {ticket.status === 'ready' && items.length > 0 && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-base">Items</CardTitle>
-            <CardDescription>
-              {items.length} item{items.length !== 1 ? 's' : ''} found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{item.name}</div>
-                        {item.category && (
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {item.category}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(item.price)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(item.price * item.quantity)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Processing State */}
-      {ticket.status === 'processing' && (
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <RefreshCw className="h-5 w-5 animate-spin text-primary" />
-              <div>
-                <p className="font-medium">Processing receipt...</p>
-                <p className="text-sm text-muted-foreground">
-                  AI is analyzing the image to extract items and prices
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Error State */}
-      {ticket.status === 'error' && (
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to process receipt. The image might be unclear or in an unsupported format.
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="ml-2"
-                  onClick={fetchTicketData}
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Retry
-                </Button>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Finalized State */}
-      {ticket.status === 'finalized' && (
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium text-green-600">Ticket finalized</p>
-                <p className="text-sm text-muted-foreground">
-                  Expenses have been created and added to the group
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

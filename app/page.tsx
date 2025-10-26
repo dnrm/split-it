@@ -13,10 +13,10 @@ export default function Home() {
             <span className="text-xl font-bold">SplitSphere</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild>
+            <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
               <Link href="/auth/login">Sign In</Link>
             </Button>
-            <Button asChild>
+            <Button className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
               <Link href="/auth/signup">Get Started</Link>
             </Button>
           </div>
@@ -39,12 +39,12 @@ export default function Home() {
               Just say "I paid $45 for dinner" and let AI handle the rest. No spreadsheets, no math, just vibes.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" asChild>
+              <Button size="lg" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
                 <Link href="/auth/signup">
                   Get Started Free
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" className='rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary' asChild>
                 <Link href="/auth/login">
                   Sign In
                 </Link>
@@ -89,7 +89,7 @@ export default function Home() {
             <p className="mt-4 text-lg text-muted-foreground">
               Join thousands of users who've made expense sharing effortless.
             </p>
-            <Button size="lg" className="mt-6" asChild>
+            <Button size="lg" className="mt-6 rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary" asChild>
               <Link href="/auth/signup">
                 Start Free Today
               </Link>

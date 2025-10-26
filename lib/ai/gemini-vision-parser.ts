@@ -1,25 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { z } from 'zod';
 import { ParsedTicket } from '@/types';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
-// Schema for parsed ticket validation
-const ParsedTicketSchema = z.object({
-  merchantName: z.string().min(1),
-  total: z.number().positive(),
-  tax: z.number().optional(),
-  tip: z.number().optional(),
-  items: z.array(z.object({
-    name: z.string().min(1),
-    price: z.number().positive(),
-    quantity: z.number().positive(),
-    category: z.string().optional(),
-  })).min(1),
-  confidence: z.number().min(0).max(1),
-});
 
 /**
  * Parse ticket/receipt image using Gemini Vision API
@@ -39,53 +23,40 @@ export async function parseTicketFromImage(
 
 CRITICAL REQUIREMENTS:
 1. Identify the merchant/store name
-2. Extract ALL individual line items with their prices and quantities
-3. Calculate the total amount
-4. Identify tax and tip if present
-5. Categorize each item appropriately
-6. Return ONLY valid JSON, no markdown formatting
+2. Extract ONLY individual line items (not subtotals, tax, tips, or totals)
+3. For each item: name, unit price, quantity
+4. Calculate total as SUM of all items ONLY
+5. Identify tax and tip separately (do NOT include in items)
 
-For each item, extract:
-- name: Clear description of the item
-- price: Unit price (not total for that line)
-- quantity: Number of units (default to 1 if not specified)
-- category: food, drink, merchandise, service, other
+IMPORTANT PARSING RULES:
+- Ignore subtotal, tax, tip, total lines
+- Only extract actual purchased items
+- If quantity is not clear, assume 1
+- Price should be per-unit, not line total
+- If you see "2x Pizza $20", that means price=$10, quantity=2
 
 Return this EXACT JSON structure:
 {
   "merchantName": "Store Name",
-  "total": 123.45,
-  "tax": 12.34,
-  "tip": 5.00,
+  "total": 123.45,  // SUM of (price × quantity) for all items
+  "tax": 12.34,     // Separate tax amount
+  "tip": 5.00,      // Separate tip amount
   "items": [
     {
       "name": "Item Description",
-      "price": 10.99,
-      "quantity": 2,
+      "price": 10.99,      // Unit price
+      "quantity": 2,       // Number of units
       "category": "food"
     }
   ],
   "confidence": 0.95
 }
 
-IMPORTANT RULES:
-- price must be positive numbers only
-- quantity must be positive numbers only
-- total must equal sum of (price * quantity) for all items
-- confidence should reflect how clear and readable the receipt is
-- If you cannot read something clearly, lower the confidence
-- Include ALL items, even small ones
-- If quantity is not specified, assume 1
-- Be precise with decimal places
-
-Examples of good item extraction:
-- "2x Coffee @ $3.50 each" → {"name": "Coffee", "price": 3.50, "quantity": 2, "category": "drink"}
-- "Pizza - Large" → {"name": "Pizza - Large", "price": 15.99, "quantity": 1, "category": "food"}
-- "Service Fee" → {"name": "Service Fee", "price": 2.00, "quantity": 1, "category": "service"}
+Categories: food, drink, merchandise, service, other
 
 Return ONLY the JSON object, no explanations or markdown.`;
 
-    const result = await model.generateContent([
+    const geminiResult = await model.generateContent([
       prompt,
       {
         inlineData: {
@@ -95,7 +66,7 @@ Return ONLY the JSON object, no explanations or markdown.`;
       },
     ]);
 
-    const response = result.response;
+    const response = geminiResult.response;
     const text = response.text();
 
     // Clean up the response - remove markdown code blocks if present
@@ -109,24 +80,29 @@ Return ONLY the JSON object, no explanations or markdown.`;
     // Parse JSON
     const parsed = JSON.parse(jsonText);
 
-    // Validate with Zod
-    const validated = ParsedTicketSchema.parse(parsed);
+    // Provide sensible defaults for missing fields
+    const result: ParsedTicket = {
+      merchantName: parsed.merchantName || 'Unknown Merchant',
+      total: parsed.total || 0,
+      tax: parsed.tax,
+      tip: parsed.tip,
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+      confidence: parsed.confidence || 0.5
+    };
 
-    // Additional validation: ensure total makes sense
-    const calculatedTotal = validated.items.reduce(
-      (sum, item) => sum + (item.price * item.quantity),
-      0
+    // Auto-fix total if it doesn't match items
+    const calculatedTotal = result.items.reduce(
+      (sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 1)), 0
     );
 
-    // If there's a significant discrepancy, adjust confidence
-    const totalDifference = Math.abs(validated.total - calculatedTotal);
-    if (totalDifference > 0.01) {
-      validated.confidence = Math.max(0.1, validated.confidence - 0.2);
-      console.warn(`Total mismatch: expected ${calculatedTotal}, got ${validated.total}`);
+    if (Math.abs(result.total - calculatedTotal) > 0.01) {
+      console.warn(`Adjusting total from ${result.total} to ${calculatedTotal}`);
+      result.total = calculatedTotal;
+      result.confidence = Math.max(0.3, result.confidence - 0.2);
     }
 
-    console.log('Parsed ticket data:', validated);
-    return validated;
+    console.log('Parsed ticket data:', result);
+    return result;
 
   } catch (error) {
     console.error('Error parsing ticket image:', error);
@@ -141,55 +117,6 @@ Return ONLY the JSON object, no explanations or markdown.`;
   }
 }
 
-/**
- * Validate that parsed ticket data is reasonable
- */
-export function validateParsedTicket(parsed: ParsedTicket): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  // Check if total is reasonable
-  if (parsed.total <= 0) {
-    errors.push('Total amount must be positive');
-  }
-
-  // Check if items exist
-  if (parsed.items.length === 0) {
-    errors.push('No items found in the receipt');
-  }
-
-  // Check if items have valid prices
-  parsed.items.forEach((item, index) => {
-    if (item.price <= 0) {
-      errors.push(`Item ${index + 1} has invalid price: ${item.price}`);
-    }
-    if (item.quantity <= 0) {
-      errors.push(`Item ${index + 1} has invalid quantity: ${item.quantity}`);
-    }
-  });
-
-  // Check if total matches sum of items
-  const calculatedTotal = parsed.items.reduce(
-    (sum, item) => sum + (item.price * item.quantity),
-    0
-  );
-  const totalDifference = Math.abs(parsed.total - calculatedTotal);
-  if (totalDifference > 0.01) {
-    errors.push(`Total mismatch: expected ${calculatedTotal}, got ${parsed.total}`);
-  }
-
-  // Check confidence level
-  if (parsed.confidence < 0.3) {
-    errors.push('Low confidence in parsing results');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
 
 /**
  * Categorize items based on common patterns

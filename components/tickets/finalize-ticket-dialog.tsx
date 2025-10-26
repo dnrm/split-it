@@ -1,15 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -22,22 +34,67 @@ import { TicketFinalizationSummary } from '@/types';
 import { toast } from 'sonner';
 
 interface FinalizeTicketDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   ticketId: string;
-  summary: TicketFinalizationSummary | null;
   onFinalized?: () => void;
+  children: React.ReactNode;
 }
 
 export function FinalizeTicketDialog({ 
-  open, 
-  onOpenChange, 
   ticketId, 
-  summary,
-  onFinalized 
+  onFinalized,
+  children 
 }: FinalizeTicketDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [summary, setSummary] = useState<TicketFinalizationSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [handleUnclaimedItems, setHandleUnclaimedItems] = useState<'split_equally' | 'assign_to_uploader' | 'skip'>('split_equally');
+
+  const fetchSummary = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/finalize-summary`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch summary');
+      }
+      const data = await response.json();
+      setSummary(data.summary);
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+      toast.error('Failed to load finalization summary');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalize = async () => {
+    setFinalizing(true);
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/finalize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          handleUnclaimedItems,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to finalize ticket');
+      }
+
+      toast.success('Ticket finalized successfully!');
+      setOpen(false);
+      onFinalized?.();
+
+    } catch (error) {
+      console.error('Error finalizing ticket:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to finalize ticket');
+    } finally {
+      setFinalizing(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -46,221 +103,205 @@ export function FinalizeTicketDialog({
     }).format(amount);
   };
 
-  const handleFinalize = async () => {
-    if (!summary) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/tickets/${ticketId}/finalize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handleUnclaimedItems }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to finalize ticket');
-      }
-
-      const data = await response.json();
-      toast.success('Ticket finalized successfully!');
-      
-      onFinalized?.();
-      onOpenChange(false);
-
-    } catch (error) {
-      console.error('Error finalizing ticket:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to finalize ticket');
-    } finally {
-      setLoading(false);
-    }
+  const getTotalClaimed = () => {
+    if (!summary) return 0;
+    return summary.userTotals.reduce((total, user) => total + user.total, 0);
   };
 
-  if (!summary) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Finalize Ticket</DialogTitle>
-            <DialogDescription>
-              Loading ticket summary...
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const getUnclaimedTotal = () => {
+    if (!summary) return 0;
+    return summary.unclaimedItems.reduce((total, item) => total + item.amount, 0);
+  };
 
-  const totalClaimed = summary.userTotals.reduce((sum, user) => sum + user.total, 0);
-  const totalUnclaimed = summary.unclaimedItems.reduce((sum, item) => sum + item.amount, 0);
-  const hasUnclaimedItems = summary.unclaimedItems.length > 0;
+  useEffect(() => {
+    if (open && !summary) {
+      fetchSummary();
+    }
+  }, [open, summary]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+            <CheckCircle className="h-5 w-5" />
             Finalize Ticket
           </DialogTitle>
           <DialogDescription>
-            Review the summary and create expenses for claimed items
+            Review the final split and create individual expenses for each person
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Ticket Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                {summary.merchantName}
-              </CardTitle>
-              <CardDescription>
-                Total: {formatCurrency(summary.totalAmount)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>Claimed: {formatCurrency(totalClaimed)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  <span>Unclaimed: {formatCurrency(totalUnclaimed)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading summary...</span>
+          </div>
+        ) : summary ? (
+          <div className="space-y-6">
+            {/* Ticket Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  {summary.merchantName}
+                </CardTitle>
+                <CardDescription>
+                  Total: {formatCurrency(summary.totalAmount)}
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
-          {/* User Totals */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Expenses to Create</CardTitle>
-              <CardDescription>
-                Each person will be charged for their claimed items
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {summary.userTotals.map((user) => (
+            {/* User Totals */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Totals
+                </CardTitle>
+                <CardDescription>
+                  Amount each person will be charged
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {summary.userTotals.map((user, index) => (
                   <div key={user.userId} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {user.userName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user.userName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {user.items.length} item{user.items.length !== 1 ? 's' : ''}
-                        </div>
-                      </div>
+                      <Badge variant="outline">{index + 1}</Badge>
+                      <span className="font-medium">{user.userName}</span>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">{formatCurrency(user.total)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {user.items.map(item => item.itemName).join(', ')}
-                      </div>
+                      <p className="font-bold text-lg">{formatCurrency(user.total)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.items.length} item{user.items.length !== 1 ? 's' : ''}
+                      </p>
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Unclaimed Items */}
-          {hasUnclaimedItems && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  Unclaimed Items
-                </CardTitle>
-                <CardDescription>
-                  These items haven't been claimed by anyone
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 mb-4">
-                  {summary.unclaimedItems.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span className="text-sm">{item.itemName}</span>
-                      <span className="text-sm font-medium">
-                        {formatCurrency(item.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">What should we do with unclaimed items?</Label>
-                  <RadioGroup
-                    value={handleUnclaimedItems}
-                    onValueChange={(value) => setHandleUnclaimedItems(value as any)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="split_equally" id="split_equally" />
-                      <Label htmlFor="split_equally" className="text-sm">
-                        Split equally among all group members ({formatCurrency(totalUnclaimed / summary.userTotals.length)} each)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="assign_to_uploader" id="assign_to_uploader" />
-                      <Label htmlFor="assign_to_uploader" className="text-sm">
-                        Assign to the person who uploaded the receipt ({formatCurrency(totalUnclaimed)})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="skip" id="skip" />
-                      <Label htmlFor="skip" className="text-sm">
-                        Skip unclaimed items (they won't be included in expenses)
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Warning for no claims */}
-          {summary.userTotals.length === 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No items have been claimed yet. Please have group members claim their items before finalizing.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+            {/* Unclaimed Items */}
+            {summary.unclaimedItems.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Unclaimed Items
+                  </CardTitle>
+                  <CardDescription>
+                    {summary.unclaimedItems.length} item{summary.unclaimedItems.length !== 1 ? 's' : ''} worth {formatCurrency(getUnclaimedTotal())}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 mb-4">
+                    {summary.unclaimedItems.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span className="text-sm">{item.itemName}</span>
+                        <span className="text-sm font-medium">
+                          {item.quantity}x {formatCurrency(item.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Handle unclaimed items:</label>
+                    <Select
+                      value={handleUnclaimedItems}
+                      onValueChange={(value: any) => setHandleUnclaimedItems(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="split_equally">
+                          Split equally among all group members
+                        </SelectItem>
+                        <SelectItem value="assign_to_uploader">
+                          Assign to ticket uploader
+                        </SelectItem>
+                        <SelectItem value="skip">
+                          Skip unclaimed items
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-primary">
+                  {formatCurrency(getTotalClaimed())}
+                </p>
+                <p className="text-sm text-muted-foreground">Claimed</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-600">
+                  {formatCurrency(getUnclaimedTotal())}
+                </p>
+                <p className="text-sm text-muted-foreground">Unclaimed</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency(summary.totalAmount)}
+                </p>
+                <p className="text-sm text-muted-foreground">Total</p>
+              </div>
+            </div>
+
+            {/* Warnings */}
+            {summary.unclaimedItems.length > 0 && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {summary.unclaimedItems.length} item{summary.unclaimedItems.length !== 1 ? 's' : ''} 
+                  {' '}remain unclaimed. Choose how to handle them above.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {getTotalClaimed() === 0 && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No items have been claimed yet. Please claim some items before finalizing.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">Failed to load summary</p>
+          </div>
+        )}
 
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
+            onClick={() => setOpen(false)}
+            disabled={finalizing}
           >
             Cancel
           </Button>
           <Button
             onClick={handleFinalize}
-            disabled={loading || summary.userTotals.length === 0}
+            disabled={finalizing || !summary || getTotalClaimed() === 0}
           >
-            {loading ? (
+            {finalizing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Finalizing...
               </>
             ) : (
-              <>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Create Expenses
-              </>
+              'Finalize & Create Expenses'
             )}
           </Button>
         </DialogFooter>

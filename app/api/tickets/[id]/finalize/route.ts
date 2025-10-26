@@ -4,7 +4,7 @@ import { TicketFinalizationSummary } from '@/types';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -17,17 +17,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const ticketId = params.id;
+    const { id: ticketId } = await params;
     const body = await request.json();
     const { handleUnclaimedItems } = body; // 'split_equally' | 'assign_to_uploader' | 'skip'
 
     // Get ticket details and verify access
     const { data: ticket, error: ticketError } = await supabase
       .from('shared_tickets')
-      .select(`
-        *,
-        uploaded_by_user:users!shared_tickets_uploaded_by_fkey(*)
-      `)
+      .select('*')
       .eq('id', ticketId)
       .single();
 
@@ -64,10 +61,7 @@ export async function POST(
     // Get all group members
     const { data: groupMembers, error: membersError } = await supabase
       .from('group_members')
-      .select(`
-        user_id,
-        user:users(*)
-      `)
+      .select('user_id')
       .eq('group_id', ticket.group_id);
 
     if (membersError || !groupMembers) {
@@ -95,7 +89,7 @@ export async function POST(
       if (userTotal > 0) {
         userTotals.set(member.user_id, {
           userId: member.user_id,
-          userName: member.user?.name || 'Unknown',
+          userName: (member.user as any)?.name || 'Unknown',
           total: userTotal,
           items: [], // Will be populated below
         });
@@ -107,7 +101,6 @@ export async function POST(
       .from('ticket_item_claims')
       .select(`
         *,
-        user:users(*),
         item:ticket_items(*)
       `)
       .eq('item.ticket_id', ticketId);
@@ -145,12 +138,12 @@ export async function POST(
       );
     }
 
-    const unclaimedItems = unclaimedSummary?.filter(item => item.remaining_quantity > 0) || [];
+    const unclaimedItems = unclaimedSummary?.filter((item: any) => item.remaining_quantity > 0) || [];
 
     // Handle unclaimed items based on user preference
     if (unclaimedItems.length > 0 && handleUnclaimedItems !== 'skip') {
       const unclaimedTotal = unclaimedItems.reduce(
-        (sum, item) => sum + (item.remaining_quantity * item.item_price),
+        (sum: number, item: any) => sum + (item.remaining_quantity * item.item_price),
         0
       );
 
@@ -169,7 +162,7 @@ export async function POST(
           } else {
             userTotals.set(member.user_id, {
               userId: member.user_id,
-              userName: member.user?.name || 'Unknown',
+              userName: (member.user as any)?.name || 'Unknown',
               total: splitAmount,
               items: [{
                 itemName: 'Unclaimed items (split equally)',
@@ -192,7 +185,7 @@ export async function POST(
         } else {
           userTotals.set(ticket.uploaded_by, {
             userId: ticket.uploaded_by,
-            userName: ticket.uploaded_by_user?.name || 'Unknown',
+            userName: 'Unknown',
             total: unclaimedTotal,
             items: [{
               itemName: 'Unclaimed items',
@@ -276,7 +269,7 @@ export async function POST(
       merchantName: ticket.merchant_name || 'Unknown Merchant',
       totalAmount: ticket.total_amount || 0,
       userTotals: Array.from(userTotals.values()),
-      unclaimedItems: unclaimedItems.map(item => ({
+      unclaimedItems: unclaimedItems.map((item: any) => ({
         itemName: item.item_name,
         quantity: item.remaining_quantity,
         amount: item.remaining_quantity * item.item_price,

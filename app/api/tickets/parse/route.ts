@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { parseTicketFromImage, validateParsedTicket } from '@/lib/ai/gemini-vision-parser';
+import { parseTicketFromImage } from '@/lib/ai/gemini-vision-parser';
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,32 +76,18 @@ export async function POST(request: NextRequest) {
       // Parse the image with Gemini
       const parsedData = await parseTicketFromImage(imageBuffer, mimeType);
 
-      // Validate parsed data
-      const validation = validateParsedTicket(parsedData);
-      
-      if (!validation.isValid) {
-        console.error('Validation errors:', validation.errors);
-        
-        // Update ticket status to error
-        await supabase
-          .from('shared_tickets')
-          .update({
-            status: 'error',
-            parsed_data: {
-              error: 'Failed to parse ticket',
-              errors: validation.errors,
-            },
-          })
-          .eq('id', ticketId);
-
-        return NextResponse.json(
-          { 
-            error: 'Failed to parse ticket',
-            details: validation.errors,
-          },
-          { status: 400 }
-        );
+      // Simple critical checks - log warnings but don't block
+      if (!parsedData.merchantName) {
+        console.warn('No merchant name found');
       }
+      if (parsedData.total <= 0) {
+        console.warn('Total is zero or negative');
+      }
+      if (parsedData.items.length === 0) {
+        console.warn('No items found in receipt');
+      }
+
+      // Always proceed - user can fix in UI
 
       // Update ticket with parsed data
       const { error: updateError } = await supabase
