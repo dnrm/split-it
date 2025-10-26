@@ -35,6 +35,7 @@ import {
   MoreVertical,
   UserMinus,
   LogOut,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Group, GroupMember } from "@/types";
 import { createClient } from "@/lib/supabase/client";
@@ -312,6 +313,45 @@ export function GroupHeader({
             </DropdownMenu>
           )}
         </div>
+        {isMounted && (
+          <div className="flex gap-3">
+            <Button
+              className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
+              asChild
+            >
+              <Link href={`/dashboard/groups/${group.id}/settle`}>
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                Settle Transactions
+              </Link>
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Member
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsAddMemberOpen(true)}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Add by Email
+                </DropdownMenuItem>
+                <GroupInviteDialog
+                  groupId={group.id}
+                  groupName={group.name}
+                  trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      Create Invite Link
+                    </DropdownMenuItem>
+                  }
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
 
         <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
           <DialogContent>

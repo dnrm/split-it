@@ -1,31 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { groupId, amount, description, payerId, participants, category, rawInput } = body;
+    const {
+      groupId,
+      amount,
+      description,
+      payerId,
+      participants,
+      category,
+      rawInput,
+    } = body;
 
-    if (!groupId || !amount || !description || !payerId || !participants || participants.length === 0) {
+    console.log("Creating expense with data:", {
+      groupId,
+      amount,
+      description,
+      payerId,
+      participants,
+      category,
+      rawInput,
+    });
+
+    if (
+      !groupId ||
+      !amount ||
+      !description ||
+      !payerId ||
+      !participants ||
+      participants.length === 0
+    ) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
     // Create expense
     const { data: expense, error: expenseError } = await supabase
-      .from('expenses')
+      .from("expenses")
       .insert({
         group_id: groupId,
         amount,
@@ -38,7 +63,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (expenseError) {
-      console.error('Error creating expense:', expenseError);
+      console.error("Error creating expense:", expenseError);
       return NextResponse.json(
         { error: expenseError.message },
         { status: 500 }
@@ -55,25 +80,28 @@ export async function POST(request: NextRequest) {
       amount: splitAmount,
     }));
 
+    console.log("Creating splits:", splits);
+
     const { error: splitsError } = await supabase
-      .from('expense_splits')
+      .from("expense_splits")
       .insert(splits);
 
     if (splitsError) {
-      console.error('Error creating splits:', splitsError);
+      console.error("Error creating splits:", splitsError);
+      console.error("Splits data that failed:", splits);
       // Try to rollback expense
-      await supabase.from('expenses').delete().eq('id', expense.id);
+      await supabase.from("expenses").delete().eq("id", expense.id);
       return NextResponse.json(
-        { error: splitsError.message },
+        { error: `Failed to create splits: ${splitsError.message}` },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ expense, success: true });
   } catch (error) {
-    console.error('Error creating expense:', error);
+    console.error("Error creating expense:", error);
     return NextResponse.json(
-      { error: 'Failed to create expense' },
+      { error: "Failed to create expense" },
       { status: 500 }
     );
   }
@@ -82,50 +110,51 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const groupId = searchParams.get('groupId');
+    const groupId = searchParams.get("groupId");
 
     if (!groupId) {
       return NextResponse.json(
-        { error: 'groupId is required' },
+        { error: "groupId is required" },
         { status: 400 }
       );
     }
 
     const { data: expenses, error } = await supabase
-      .from('expenses')
-      .select(`
+      .from("expenses")
+      .select(
+        `
         *,
         payer:users!expenses_payer_id_fkey(*),
         splits:expense_splits(
           *,
           user:users(*)
         )
-      `)
-      .eq('group_id', groupId)
-      .order('created_at', { ascending: false });
+      `
+      )
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('Error fetching expenses:', error);
+      console.error("Error fetching expenses:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ expenses, success: true });
   } catch (error) {
-    console.error('Error fetching expenses:', error);
+    console.error("Error fetching expenses:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch expenses' },
+      { error: "Failed to fetch expenses" },
       { status: 500 }
     );
   }
 }
-

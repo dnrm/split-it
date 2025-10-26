@@ -1,23 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, Plus, Check, AlertCircle } from 'lucide-react';
-import { GroupMember, ParsedExpense } from '@/types';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Plus, Check, AlertCircle } from "lucide-react";
+import { GroupMember, ParsedExpense } from "@/types";
+import { toast } from "sonner";
 
 interface AddExpenseFormProps {
   groupId: string;
@@ -26,38 +32,47 @@ interface AddExpenseFormProps {
   currency: string;
 }
 
-export function AddExpenseForm({ groupId, members, currentUserId, currency }: AddExpenseFormProps) {
+export function AddExpenseForm({
+  groupId,
+  members,
+  currentUserId,
+  currency,
+}: AddExpenseFormProps) {
   const router = useRouter();
-  
+
   // Debug logging
-  console.log('AddExpenseForm - members received:', members);
-  console.log('AddExpenseForm - currentUserId:', currentUserId);
-  console.log('AddExpenseForm - groupId:', groupId);
-  const [nlInput, setNlInput] = useState('');
-  const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(null);
+  console.log("AddExpenseForm - members received:", members);
+  console.log("AddExpenseForm - currentUserId:", currentUserId);
+  console.log("AddExpenseForm - groupId:", groupId);
+  const [nlInput, setNlInput] = useState("");
+  const [parsedExpense, setParsedExpense] = useState<ParsedExpense | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Editable fields after parsing
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [payerId, setPayerId] = useState('');
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
-  const [category, setCategory] = useState('');
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [payerId, setPayerId] = useState("");
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    []
+  );
+  const [category, setCategory] = useState("");
 
   const handleParse = async () => {
     if (!nlInput.trim()) {
-      toast.error('Please enter an expense description');
+      toast.error("Please enter an expense description");
       return;
     }
 
     setLoading(true);
     try {
-      const memberNames = members.map((m) => m.user?.name || '');
-      
-      const response = await fetch('/api/expenses/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const memberNames = members.map((m) => m.user?.name || "");
+
+      const response = await fetch("/api/expenses/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           input: nlInput,
           groupMembers: memberNames,
@@ -65,7 +80,7 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
       });
 
       if (!response.ok) {
-        throw new Error('Failed to parse expense');
+        throw new Error("Failed to parse expense");
       }
 
       const data = await response.json();
@@ -74,7 +89,7 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
       setParsedExpense(parsed);
       setAmount(parsed.amount.toString());
       setDescription(parsed.description);
-      setCategory(parsed.category || 'other');
+      setCategory(parsed.category || "other");
 
       // Find payer by name
       const payer = members.find((m) => m.user?.name === parsed.payer);
@@ -84,30 +99,35 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
 
       // Find participants by names
       const participantIds = members
-        .filter((m) => parsed.participants.includes(m.user?.name || ''))
+        .filter((m) => parsed.participants.includes(m.user?.name || ""))
         .map((m) => m.user_id);
       setSelectedParticipants(participantIds);
 
-      toast.success('Expense parsed! Review and confirm below.');
+      toast.success("Expense parsed! Review and confirm below.");
     } catch (error) {
-      console.error('Parse error:', error);
-      toast.error('Failed to parse expense. Try being more specific.');
+      console.error("Parse error:", error);
+      toast.error("Failed to parse expense. Try being more specific.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!amount || !description || !payerId || selectedParticipants.length === 0) {
-      toast.error('Please fill in all required fields');
+    if (
+      !amount ||
+      !description ||
+      !payerId ||
+      selectedParticipants.length === 0
+    ) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
     setSaving(true);
     try {
-      const response = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groupId,
           amount: parseFloat(amount),
@@ -120,24 +140,31 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create expense');
+        const errorData = await response.json();
+        console.error("Server error:", errorData);
+        throw new Error(errorData.error || "Failed to create expense");
       }
 
-      toast.success('Expense added successfully!');
-      
+      const result = await response.json();
+      console.log("Expense created:", result);
+
+      toast.success("Expense added successfully!");
+
       // Reset form
-      setNlInput('');
+      setNlInput("");
       setParsedExpense(null);
-      setAmount('');
-      setDescription('');
-      setPayerId('');
+      setAmount("");
+      setDescription("");
+      setPayerId("");
       setSelectedParticipants([]);
-      setCategory('');
-      
+      setCategory("");
+
       router.refresh();
     } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Failed to save expense');
+      console.error("Save error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save expense"
+      );
     } finally {
       setSaving(false);
     }
@@ -182,19 +209,21 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
             className="w-full sm:w-auto rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            {loading ? 'Parsing...' : 'Parse with AI'}
+            {loading ? "Parsing..." : "Parse with AI"}
           </Button>
         </div>
 
         {/* Parsed Result / Manual Entry */}
-        {(parsedExpense || nlInput === '') && (
+        {(parsedExpense || nlInput === "") && (
           <div className="space-y-4 rounded-lg border p-4">
             {parsedExpense && (
               <div className="mb-4 flex items-center gap-2">
                 {parsedExpense.confidence >= 0.7 ? (
                   <>
                     <Check className="h-4 w-4 text-chart-5" />
-                    <span className="text-sm font-medium text-chart-5">High confidence</span>
+                    <span className="text-sm font-medium text-chart-5">
+                      High confidence
+                    </span>
                   </>
                 ) : (
                   <>
@@ -227,22 +256,26 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
 
               <div className="space-y-2">
                 <Label htmlFor="payer">Paid by</Label>
-                <Select value={payerId} onValueChange={setPayerId} disabled={saving}>
+                <Select
+                  value={payerId}
+                  onValueChange={setPayerId}
+                  disabled={saving}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select payer" />
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((member) => {
-                      console.log('Rendering member in dropdown:', {
+                      console.log("Rendering member in dropdown:", {
                         user_id: member.user_id,
                         user_name: member.user?.name,
-                        display_name: member.user?.name || 'Unknown User',
-                        is_current_user: member.user_id === currentUserId
+                        display_name: member.user?.name || "Unknown User",
+                        is_current_user: member.user_id === currentUserId,
                       });
                       return (
                         <SelectItem key={member.user_id} value={member.user_id}>
-                          {member.user?.name || 'Unknown User'}
-                          {member.user_id === currentUserId && ' (You)'}
+                          {member.user?.name || "Unknown User"}
+                          {member.user_id === currentUserId && " (You)"}
                         </SelectItem>
                       );
                     })}
@@ -265,7 +298,11 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
 
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select value={category} onValueChange={setCategory} disabled={saving}>
+              <Select
+                value={category}
+                onValueChange={setCategory}
+                disabled={saving}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -284,21 +321,27 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
               <Label>Split between</Label>
               <div className="flex flex-wrap gap-2">
                 {members.map((member) => {
-                  console.log('Rendering member in pills:', {
+                  console.log("Rendering member in pills:", {
                     user_id: member.user_id,
                     user_name: member.user?.name,
-                    display_name: member.user?.name || 'Unknown User',
-                    is_current_user: member.user_id === currentUserId
+                    display_name: member.user?.name || "Unknown User",
+                    is_current_user: member.user_id === currentUserId,
                   });
                   return (
                     <Badge
                       key={member.user_id}
-                      variant={selectedParticipants.includes(member.user_id) ? 'default' : 'outline'}
+                      variant={
+                        selectedParticipants.includes(member.user_id)
+                          ? "default"
+                          : "outline"
+                      }
                       className="cursor-pointer"
-                      onClick={() => !saving && handleToggleParticipant(member.user_id)}
+                      onClick={() =>
+                        !saving && handleToggleParticipant(member.user_id)
+                      }
                     >
-                      {member.user?.name || 'Unknown User'}
-                      {member.user_id === currentUserId && ' (You)'}
+                      {member.user?.name || "Unknown User"}
+                      {member.user_id === currentUserId && " (You)"}
                     </Badge>
                   );
                 })}
@@ -310,10 +353,15 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
 
             <Button
               onClick={handleSave}
-              disabled={saving || !amount || !payerId || selectedParticipants.length === 0}
+              disabled={
+                saving ||
+                !amount ||
+                !payerId ||
+                selectedParticipants.length === 0
+              }
               className="w-full rounded-xl bg-linear-to-b from-primary to-blue-600 text-white hover:from-primary/80 hover:to-primary/50 border border-primary"
             >
-              {saving ? 'Saving...' : 'Save Expense'}
+              {saving ? "Saving..." : "Save Expense"}
             </Button>
           </div>
         )}
@@ -321,4 +369,3 @@ export function AddExpenseForm({ groupId, members, currentUserId, currency }: Ad
     </Card>
   );
 }
-
