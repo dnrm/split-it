@@ -13,6 +13,7 @@ export interface Group {
   currency: string;
   created_by: string;
   created_at: string;
+  settled_at?: string;
 }
 
 export interface GroupMember {
@@ -23,8 +24,8 @@ export interface GroupMember {
   user?: User;
 }
 
-export type InvitationUsageType = 'single' | 'multi';
-export type InvitationExpiration = '24h' | '7d' | '30d';
+export type InvitationUsageType = "single" | "multi";
+export type InvitationExpiration = "24h" | "7d" | "30d";
 
 export interface GroupInvitation {
   id: string;
@@ -105,7 +106,7 @@ export interface ExpenseWithDetails extends Expense {
 }
 
 // Summary Types
-export type SummaryTone = 'formal' | 'casual' | 'sarcastic' | 'roast';
+export type SummaryTone = "formal" | "casual" | "sarcastic" | "roast";
 
 export interface GroupSummary {
   totalSpend: number;
@@ -120,3 +121,32 @@ export interface GroupSummary {
   tone: SummaryTone;
 }
 
+// Capital One Integration Types
+export interface CapitalOneAccount {
+  id: string;
+  type: string;
+  balance: number;
+}
+
+export interface Transaction {
+  id: string;
+  group_id: string;
+  settlement_from: string;
+  settlement_to: string;
+  amount: number;
+  transfer_id: string;
+  status: "pending" | "completed" | "failed";
+  created_at: string;
+}
+
+export interface CapitalOneTransfer {
+  transferId: string;
+  status: string;
+  amount: number;
+  fromAccountId: string;
+  toAccountId: string;
+}
+
+// Legacy type kept for backwards compatibility
+// Previously used for Capital One integration
+export interface UserWithAccount extends User {}

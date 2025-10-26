@@ -6,6 +6,7 @@ An AI-powered expense-sharing application that simplifies group payments through
 
 - **AI Expense Parsing**: Describe expenses naturally (e.g., "I paid $45 for dinner for everyone") and let AI extract the details
 - **Smart Settlements**: Optimized payment plans that minimize the number of transactions
+- **Automated Transfers**: Execute settlements automatically via Capital One API integration
 - **Group Management**: Create and manage expense groups with friends, family, or colleagues
 - **Real-time Balances**: Automatically calculated balances showing who owes whom
 - **AI Summaries**: Generate intelligent summaries of group expenses with different tones
@@ -71,6 +72,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Google Gemini API
 GEMINI_API_KEY=your_gemini_api_key
+
+# Capital One API Configuration (for Settle Transactions feature)
+CAPITAL_ONE_CLIENT_ID=your_capital_one_client_id
+CAPITAL_ONE_CLIENT_SECRET=your_capital_one_client_secret
+CAPITAL_ONE_API_BASE_URL=https://api.capitalone.com
 ```
 
 **Important**: Never commit `.env.local` to version control. It's already in `.gitignore`.
@@ -128,22 +134,37 @@ All tables have Row Level Security (RLS) enabled for secure data access.
 2. Choose a tone (Formal, Casual, or Sarcastic)
 3. AI will generate an intelligent summary of spending
 
+### Settling Transactions (Capital One Integration)
+
+1. Click "Settle Transactions" button in the group header
+2. Review the optimized settlement plan and insights
+3. Connect your Capital One account if you haven't already
+4. Ensure all involved users have connected their accounts
+5. Click "Confirm & Execute Transfers" to process payments automatically
+6. Transfers are executed via Capital One API (1-3 business days)
+
 ## Project Structure
 
 ```
 /app
   /api              # Next.js API routes
+    /capital-one    # Capital One API integration
   /auth             # Authentication pages
   /dashboard        # Main application pages
+    /groups/[id]
+      /settle       # Settle transactions page
 /components
   /ui               # Shadcn/ui components
   /expenses         # Expense-related components
   /groups           # Group management components
   /balances         # Balance display components
   /summaries        # AI summary components
+  /settlements      # Settlement and transfer components
+  /capital-one      # Capital One account connection
 /lib
   /ai               # Gemini AI integration
   /supabase         # Supabase client setup
+  /capital-one      # Capital One API client
   /utils            # Utility functions (balance calculator, settlement optimizer)
 /types              # TypeScript type definitions
 ```
@@ -153,6 +174,7 @@ All tables have Row Level Security (RLS) enabled for secure data access.
 ### Balance Calculator
 
 Calculates net balances by:
+
 1. Summing total paid per user
 2. Summing total owed per user
 3. Computing net balance (paid - owed)
@@ -160,12 +182,13 @@ Calculates net balances by:
 ### Settlement Optimizer
 
 Minimizes transactions using a greedy algorithm:
+
 1. Separate creditors (owed money) and debtors (owe money)
 2. Match largest creditor with largest debtor
 3. Settle the minimum of both amounts
 4. Repeat until all balanced
 
-This typically reduces N*(N-1) potential transactions to just a few payments.
+This typically reduces N\*(N-1) potential transactions to just a few payments.
 
 ## Deployment
 
@@ -184,11 +207,16 @@ This typically reduces N*(N-1) potential transactions to just a few payments.
 
 ## Environment Variables Reference
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Yes |
-| `GEMINI_API_KEY` | Google Gemini API key | Yes |
+| Variable                        | Description                   | Required   |
+| ------------------------------- | ----------------------------- | ---------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL     | Yes        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key   | Yes        |
+| `GEMINI_API_KEY`                | Google Gemini API key         | Yes        |
+| `CAPITAL_ONE_CLIENT_ID`         | Capital One API client ID     | Optional\* |
+| `CAPITAL_ONE_CLIENT_SECRET`     | Capital One API client secret | Optional\* |
+| `CAPITAL_ONE_API_BASE_URL`      | Capital One API base URL      | Optional\* |
+
+\*Required only if using the Settle Transactions feature
 
 ## Troubleshooting
 
@@ -215,9 +243,11 @@ This typically reduces N*(N-1) potential transactions to just a few payments.
 - Voice input for expense entry
 - Receipt scanning with OCR
 - Multi-currency support with live conversion
-- Integration with payment platforms (Venmo, PayPal)
+- Additional payment platform integrations (Venmo, PayPal, Zelle)
 - WhatsApp/Telegram bot for expense tracking
-- Expense analytics and charts
+- Enhanced expense analytics and charts
+- Recurring expense support
+- Transaction history and audit logs
 
 ## Contributing
 
