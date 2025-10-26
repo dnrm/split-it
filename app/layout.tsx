@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   title: "SplitIt - AI-Powered Expense Sharing",
   description:
     "Simplify group payments through voice, natural language, and automated settlement optimization.",
+  icons: {
+    icon: "/sparkles.svg",
+    shortcut: "/sparkles.svg",
+    apple: "/sparkles.svg",
+  },
 };
 
 export default function RootLayout({
