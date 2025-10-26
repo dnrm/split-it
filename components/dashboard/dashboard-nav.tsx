@@ -24,6 +24,7 @@ import {
   Menu,
   LogOut,
   User as UserIcon,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,11 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/groups", label: "Groups", icon: Users },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt },
+  {
+    href: "/dashboard/payment-method",
+    label: "Payment Method",
+    icon: CreditCard,
+  },
 ];
 
 export function DashboardNav({ user }: DashboardNavProps) {
@@ -126,6 +132,13 @@ export function DashboardNav({ user }: DashboardNavProps) {
                     <ThemeToggle />
                   </div>
                 </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/payment-method">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Payment Method
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
