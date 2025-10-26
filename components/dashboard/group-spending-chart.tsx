@@ -92,7 +92,6 @@ export function GroupSpendingChart({ data, currency }: GroupSpendingChartProps) 
               content={
                 <ChartLegendContent
                   nameKey="name"
-                  formatter={(value) => value}
                 />
               }
             />

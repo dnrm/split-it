@@ -1,10 +1,11 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Button, ButtonProps } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { forwardRef } from 'react';
+import { ComponentProps } from 'react';
 
-interface AnimatedButtonProps extends ButtonProps {
+interface AnimatedButtonProps extends ComponentProps<typeof Button> {
   animationType?: 'scale' | 'lift' | 'bounce';
 }
 
