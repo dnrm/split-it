@@ -20,6 +20,7 @@ import {
   Home,
   Users,
   Receipt,
+  Tickets,
   DollarSign,
   Menu,
   LogOut,
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/groups", label: "Groups", icon: Users },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt },
+  { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
 ];
 
 export function DashboardNav({ user }: DashboardNavProps) {
