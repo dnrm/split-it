@@ -34,12 +34,12 @@ function AnimatedCurrencyLine({ baseText, allSymbols, lineIndex }: {
 export function AnimatedCurrencyBackground() {
   return (
     <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-      {Array.from({ length: 50 }, (_, i) => {
+      {Array.from({ length: 100 }, (_, i) => {
         const currencies = "$ ¥ € £ ₹ ₽ ₩ ₪ ₨ ₦ ₡ ₱ ₫ ₴ ₸ ₼ ₾ ₿";
         const reversedCurrencies = "₿ ₾ ₼ ₸ ₴ ₫ ₱ ₡ ₦ ₨ ₪ ₩ ₽ ₹ £ € ¥ $";
         const allSymbols = "! @ # % & * + - = ? ^ ~ | < > { } [ ] ( ) : ; \" ' ` ~ _ . , / \\";
         const isEvenLine = i % 2 === 0;
-        const topPosition = -10 + (i * 2); // Start at -10rem, then -8rem, etc. (limited to stay within hero section)
+        const topPosition = -20 + (i * 2); // Start at -10rem, then -8rem, etc. (limited to stay within hero section)
         const degree = -20;
         
         return (

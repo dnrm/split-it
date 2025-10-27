@@ -1,6 +1,15 @@
 .text-type {
   display: inline-block;
   white-space: pre-wrap;
+  /* Use a subtle min-height that only kicks in when text wraps */
+  min-height: 1em;
+}
+
+/* Only add extra height on smaller screens where text is more likely to wrap */
+@media (max-width: 768px) {
+  .text-type {
+    min-height: 1.2em; /* Slightly more space on mobile */
+  }
 }
 
 .text-type__cursor {

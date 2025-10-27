@@ -49,11 +49,11 @@ export default function Home() {
               <Sparkles className="h-4 w-4 animate-pulse" />
               <span>AI-Powered Expense Sharing</span>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <TextType
                 text={[
                   "Split expenses with natural language",
-                  "Just say 'I paid $45 for dinner' and AI handles the rest",
+                  "Just say 'I paid $45 for dinner'.",
                   "No spreadsheets, just vibes",
                   "Perfect for trips and roommates",
                   "SplitIt is a free and easy to use expense sharing app",
@@ -67,7 +67,7 @@ export default function Home() {
                 className="text-foreground"
                 as="span"
               />
-            </h1>
+            </div>
             <p className="max-w-[700px] text-lg text-muted-foreground sm:text-xl animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               Just say "I paid $45 for dinner" and let AI handle the rest. No
               spreadsheets, no math, just vibes.
